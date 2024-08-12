@@ -1514,8 +1514,8 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 
 	if(sStat->feasible){
 
-        // cout << " LB: " << bSARP.getObjValue() << endl;
-        // cout << " UB: " << bSARP.getBestObjValue() << endl;
+        cout << " LB: " << bSARP.getObjValue() << endl;
+        cout << " UB: " << bSARP.getBestObjValue() << endl;
 
         solStatIni(sStat);
 		// cout << "\nObj Val: " << setprecision(15) << bSARP.getObjValue() << endl;

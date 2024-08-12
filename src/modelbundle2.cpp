@@ -1263,7 +1263,7 @@ void nodeSolution2 (instanceStat *inst, double **mdist, bundleStat *bStat, vecto
     vector<int> vehicleNumbers;
 
     for (int k = 0; k < inst->K; k++){
-        // cout << "Vehicle " << k << ": ";
+        cout << "Vehicle " << k << ": ";
 
         if (sStat->solInNode[k].size() > 2){
             usedVehicles++;
@@ -1272,55 +1272,55 @@ void nodeSolution2 (instanceStat *inst, double **mdist, bundleStat *bStat, vecto
 
         for (int i = 0; i < sStat->solInNode[k].size(); i++){
             if (i < sStat->solInNode[k].size() - 1){
-                // cout << sStat->solInNode[k][i] << " - ";
+                cout << sStat->solInNode[k][i] << " - ";
             }
             else{
-                // cout << sStat->solInNode[k][i];
+                cout << sStat->solInNode[k][i];
             }
         }
         currSP = inst->n + 2*inst->m + k;
 
-        // // cout << " // Bundle selection: " << (mdist[currSP][bStat->firstElement[sStat->solOrder[k][1]]]/inst->vmed);
+        // cout << " // Bundle selection: " << (mdist[currSP][bStat->firstElement[sStat->solOrder[k][1]]]/inst->vmed);
 
-        // cout << " - Total time: " << bStat->bundleEnd[sStat->solOrder[k][sStat->solOrder[k].size()-2]] - bStat->bundleStart[sStat->solOrder[k][1]] + (mdist[currSP][bStat->firstElement[sStat->solOrder[k][1]]]/inst->vmed) << endl;
+        cout << " - Total time: " << bStat->bundleEnd[sStat->solOrder[k][sStat->solOrder[k].size()-2]] - bStat->bundleStart[sStat->solOrder[k][1]] + (mdist[currSP][bStat->firstElement[sStat->solOrder[k][1]]]/inst->vmed) << endl;
     }
-    // cout << endl;
+    cout << endl;
 
-    // cout << "\nSolution structure: " << endl;
+    cout << "\nSolution structure: " << endl;
     for (int k = 0; k < inst->K; k++){
-        // cout << "Vehicle " << k << ": ";
+        cout << "Vehicle " << k << ": ";
         for (int i = 0; i < sStat->solInNode[k].size(); i++){
             if (i < sStat->solInNode[k].size() - 1){
                 if (sStat->solInNode[k][i] < inst->n){
-                    // cout << "d" << " - ";
+                    cout << "d" << " - ";
                 }
                 else if (sStat->solInNode[k][i] < inst->n + inst->m){
-                    // cout << "P" << " - ";
+                    cout << "P" << " - ";
                     sStat->servedParcels++;
 
                 }
                 else if (sStat->solInNode[k][i] < inst->n + 2*inst->m){
-                    // cout << "D" << " - ";
+                    cout << "D" << " - ";
                 }
                 else if (sStat->solInNode[k][i] < inst->n + 2*inst->m + inst->K){
-                    // cout << "S" << " - ";
+                    cout << "S" << " - ";
                 }                                      
             }
             else{
 
-                // cout << "f";
+                cout << "f";
             }
         }
-        // cout << endl;
+        cout << endl;
     }
-    // cout << endl;
+    cout << endl;
 
-    // cout << "Used vehicles: " << usedVehicles << endl;
-    // cout << "Vehicle numbers: ";
+    cout << "Used vehicles: " << usedVehicles << endl;
+    cout << "Vehicle numbers: ";
     for (int i = 0; i < vehicleNumbers.size(); i++){
-        // cout << vehicleNumbers[i] << " ";
+        cout << vehicleNumbers[i] << " ";
     }
-    // cout << endl;
+    cout << endl;
 }
 
 void stillTimeBundle2(instanceStat *inst, double **mdist, bundleStat *bStat, vector<nodeStat> &nodeVec, solStats *sStat){

@@ -213,17 +213,13 @@ void solveselect(nodeStat *node, instanceStat *inst, double **mdist, vector<node
         bundleMethod2(node, inst, mdist, nodeVec, problem, sStat);
     }
 
-    else if (problem->model == "bundle7"){
-        bundleMethod2(node, inst, mdist, nodeVec, problem, sStat);
-    }
-
-    else if (problem->model == "bundle8"){
-        bundleMethod2(node, inst, mdist, nodeVec, problem, sStat);
-    }
-
     else if (problem->model == "fip"){
         fipMethod(node, inst, mdist, nodeVec, problem, sStat);
 
+    }
+
+    else if (problem->model == "arcbundle") {
+        arcBundleMethod(node, inst, mdist, nodeVec, problem, sStat);
     }
     // else if (){
 

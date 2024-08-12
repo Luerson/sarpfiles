@@ -31,5 +31,6 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 void printResults(instanceStat *inst, double **mdist, solStats *sStat, vector<nodeStat> &nodeVec);
 void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, probStat* problem, nodeArcsStruct *nas, solStats *sStat);
 void fipmip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, probStat* problem, nodeArcsStruct *nas, solStats *sStat, fipStats *fipStat);
+void arcBundle(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, probStat *problem, nodeArcsStruct *nas, solStats *sStat);
 
 #endif
