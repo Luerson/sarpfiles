@@ -25,7 +25,7 @@ class MyLazyCallback : public IloCplex::LazyConstraintCallbackI
    public:
  
         //Class constructor
-        MyLazyCallback(IloEnv env, const IloArray <IloArray < IloArray <IloBoolVarArray> > >& x_ref, nodeArcsStruct *nas, double **mdist, instanceStat *inst, probStat* problem, vector<nodeStat> &nodeVec, int nodes, int veic, int parcels, int customers);
+        MyLazyCallback(IloEnv env, const IloArray <IloArray < IloArray <IloBoolVarArray> > >& x_ref, nodeArcsStruct *nas, double **mdist, instanceStat *inst, probStat* problem, vector<nodeStat> &nodeVec, double* p_bestSolVal, int nodes, int veic, int parcels, int customers);
         
         //Method that returned a callback's copy. CPLEX requirement
         IloCplex::CallbackI* duplicateCallback() const;
@@ -66,6 +66,9 @@ class MyLazyCallback : public IloCplex::LazyConstraintCallbackI
         instanceStat *inst;
         probStat* problem;
         double **mdist;
+
+        // Temporary variables
+        double *bestSolVal;
 };
 /***********************************************************************/
 

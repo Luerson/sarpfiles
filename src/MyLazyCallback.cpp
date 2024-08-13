@@ -4,7 +4,7 @@
 #include <list>
 
 /********************************************** Class' Constructor **********************************************/
-MyLazyCallback::MyLazyCallback(IloEnv env, const IloArray <IloArray < IloArray <IloBoolVarArray> > >& x_ref, nodeArcsStruct *arrConj, double **mdist, instanceStat *inst, probStat* problem, vector<nodeStat> &nodeVec, int nodes, int veic, int parcels, int customers) : IloCplex::LazyConstraintCallbackI(env), x(x_ref), x_vars(env), mdist(mdist), inst(inst), problem(problem), nodeVec(nodeVec), n(nodes), v(veic), nas(arrConj), nParcels(parcels), nCustomers(customers)
+MyLazyCallback::MyLazyCallback(IloEnv env, const IloArray <IloArray < IloArray <IloBoolVarArray> > >& x_ref, nodeArcsStruct *arrConj, double **mdist, instanceStat *inst, probStat* problem, vector<nodeStat> &nodeVec, double* p_bestSolVal, int nodes, int veic, int parcels, int customers) : IloCplex::LazyConstraintCallbackI(env), x(x_ref), x_vars(env), mdist(mdist), inst(inst), problem(problem), nodeVec(nodeVec), bestSolVal(p_bestSolVal), n(nodes), v(veic), nas(arrConj), nParcels(parcels), nCustomers(customers)
 {
 	int num = 0;
 	/********** Filling x_vars **********/
@@ -51,7 +51,7 @@ MyLazyCallback::MyLazyCallback(IloEnv env, const IloArray <IloArray < IloArray <
 /************************** Return a callback copy. This method is a CPLEX requirement ***************************/
 IloCplex::CallbackI* MyLazyCallback::duplicateCallback() const 
 { 
-   return new (getEnv()) MyLazyCallback(getEnv(), x, nas, mdist, inst, problem, nodeVec, n, v, nParcels, nCustomers); 
+   return new (getEnv()) MyLazyCallback(getEnv(), x, nas, mdist, inst, problem, nodeVec, bestSolVal, n, v, nParcels, nCustomers); 
 }
 /*****************************************************************************************************************/
 
@@ -360,7 +360,7 @@ void MyLazyCallback::main()
 			}
 			//Right side: arc enters i
 			for (int b = 0; b < arcIn[i].size(); b++){
-				int j = arcOut[i][b];
+				int j = arcIn[i][b];
 				exp2 += u[j][i];
 			}
 			sprintf (var, "Constraint4_%d_%d", a, k);
@@ -475,8 +475,11 @@ void MyLazyCallback::main()
 		IloCplex nSARPLazy(model);
 		nSARPLazy.exportModel("nSARPLazy.lp");
 		nSARPLazy.setOut(env.getNullStream());
+		// nSARPLazy.setWarning(env.getNullStream());
 		nSARPLazy.setParam(IloCplex::Threads, threads);
 		nSARPLazy.setParam(IloCplex::Param::TimeLimit, 7200);
+		// nSARPLazy.setParam(IloCplex::Param::MIP::Display, 0);
+		// nSARPLazy.setParam(IloCplex::Param::Read::WarningLimit, 0);
 
 		IloNum start;
 		IloNum time;
@@ -604,7 +607,8 @@ void MyLazyCallback::main()
 		// cout << "ALL ROUTES ARES FEASIBLE" << endl;
 		IloExpr expr(getEnv());	// Expression for the lazy constraint
 
-		cout << solVal << endl;
+		// cout << solVal << endl;
+		*bestSolVal = max(*bestSolVal, solVal);
 
 		vector< vector<int> > customersRoutes;
 		int _size = 0;

@@ -1717,11 +1717,15 @@ void arcBundle(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, pr
 	IloCplex nSARP(model);
 	nSARP.exportModel("nSARP.lp");
 	nSARP.setOut(env.getNullStream());
+	// nSARP.setWarning(env.getNullStream());
 	nSARP.setParam(IloCplex::Threads, threads);
 	nSARP.setParam(IloCplex::Param::TimeLimit, 7200);
+	// nSARP.setParam(IloCplex::Param::MIP::Display, 0);
+	// nSARP.setParam(IloCplex::Param::Read::WarningLimit, 0);
 
 	// Lazy Callback
-	MyLazyCallback* lazyCbk = new (env) MyLazyCallback(env, x, nas, mdist, inst, problem, nodeVec, (int)nodeVec.size(), (int)inst->K, (int)inst->m, (int)inst->n);
+	double bestSolVal = 0;
+	MyLazyCallback* lazyCbk = new (env) MyLazyCallback(env, x, nas, mdist, inst, problem, nodeVec, &bestSolVal, (int)nodeVec.size(), (int)inst->K, (int)inst->m, (int)inst->n);
 	nSARP.use(lazyCbk);
 	
 
@@ -1734,7 +1738,8 @@ void arcBundle(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, pr
 	sStat->feasible = nSARP.isPrimalFeasible();
 
     // cout  << " Tree_Size: " <<  nSARP.getNnodes() + nSARP.getNnodesLeft() + 1 << endl;
-    // cout  << " Total Time: " << time << endl;
+    cout  << " Total Time: " << time << endl;
+	cout << "bestSolVal = " << bestSolVal << endl;
 
 	if (sStat->feasible){
 
