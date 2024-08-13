@@ -2231,7 +2231,7 @@ void fipArcs(instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<
 }
 
 // This method is exclusive to the arcBundleMethod
-pair<double, double> calcularProfit(const std::vector<int>& route, const std::vector<nodeStat>& nodeVec, double** mdist, const instanceStat* inst, int i, int j) {
+pair<double, double> calcularProfit(const std::vector<int>& route, const std::vector<nodeStat>& nodeVec, double** mdist, const instanceStat* inst, int i, int j, nodeArcsStruct *nas) {
     double profit = 0;
     int prev = -1;
     for (int r : route) {
@@ -2247,13 +2247,35 @@ pair<double, double> calcularProfit(const std::vector<int>& route, const std::ve
     profit -= mdist[route.back()][j] * inst->costkm;
 
     // Including the minimum cost from every parcel pickup to its delivery
-    double minimum_extra = 0;
-    // for (int r : route)
-    // {
-    //     minimum_extra += mdist[r][r+inst->m] * inst->costkm;
-    // }
+    // double minimum_extra = 0;
+    // // for (int r : route)
+    // // {
+    // //     minimum_extra += mdist[r][r+inst->m] * inst->costkm;
+    // // }
 
-    return {profit, minimum_extra};
+    // Including the mean cost from every node (except the final deposit) to the route's deliveries
+    double extra = 0;
+    for (int r : route)
+    {
+        int deliveryIdx = r + inst->m;
+        double mean = 0;
+
+        for (pair<int, int>& p : nas->arcMinus[deliveryIdx])
+        {
+            mean += mdist[p.first][deliveryIdx] * inst->costkm;
+        }
+
+        for (pair<int, int>& p : nas->arcPlus[deliveryIdx])
+        {
+            mean += mdist[deliveryIdx][p.second] * inst->costkm;
+        }
+
+        mean /= nas->arcMinus[deliveryIdx].size() + nas->arcPlus[deliveryIdx].size();
+        extra += mean;
+    }
+
+
+    return {profit, extra};
 }
 
 // This method is exclusive to the arcBundleMethod
@@ -2276,7 +2298,7 @@ bool isViableRoute(const std::vector<int>& route, const std::vector<nodeStat>& n
 }
 
 // This method is exclusive to the arcBundleMethod
-vector< pair< double, vector< int > > > gerarCombinacoesPermutacoes(int i, int j, const instanceStat* inst, const std::vector<nodeStat>& nodeVec, double** mdist, int y) {
+vector< pair< double, vector< int > > > gerarCombinacoesPermutacoes(int i, int j, const instanceStat* inst, const std::vector<nodeStat>& nodeVec, double** mdist, int y, nodeArcsStruct *nas) {
     map<string, pair<double, vector<int>>> combinacoes;
     map<string, double> auxComb;
 	vector< pair< double, vector< int > > > subsequences;
@@ -2319,7 +2341,7 @@ vector< pair< double, vector< int > > > gerarCombinacoesPermutacoes(int i, int j
                 chave.pop_back();
 
                 // Calcula o profit da rota atual
-                pair<double, double> temp = calcularProfit(combinacao, nodeVec, mdist, inst, i, j);
+                pair<double, double> temp = calcularProfit(combinacao, nodeVec, mdist, inst, i, j, nas);
                 double profitAtual = temp.first;
                 double minimum_extra = temp.second;
 
@@ -2387,7 +2409,7 @@ void fillSubsequences(nodeArcsStruct *nas, instanceStat *inst, vector<nodeStat> 
 
 			for (int z = 1; z <= 5; z++) {
 				vector< pair< double, vector< int > > > selectedSubseq;
-				selectedSubseq = gerarCombinacoesPermutacoes(i, j, inst, nodeVec, mdist, z);
+				selectedSubseq = gerarCombinacoesPermutacoes(i, j, inst, nodeVec, mdist, z, nas);
 
 				for (int z1 = 0; z1 < selectedSubseq.size(); z1++) {
                     vector<int> curSeq = selectedSubseq[z1].second;

@@ -157,11 +157,22 @@ void MyLazyCallback::main()
 	// }
 	// getchar();
 
+	vector< vector<int> > customersRoutes;
+
+	for (int k = 0; k < routes.size(); k++) {
+		customersRoutes.push_back(vector<int>());
+		for (int i = 0; i < routes[k].size(); i++) {
+			if (routes[k][i] < inst->n || routes[k][i] >= inst->n + 2*inst->m) {
+				customersRoutes[k].push_back(routes[k][i]);
+			}
+		}
+	}
+
 	int count = 0;
 
 	double solVal = 0;
 
-	for (int k = 0; k < routes.size(); k++) {
+	for (int k = 0; k < customersRoutes.size(); k++) {
 		//MIP
 		//Creating environment and model 
 		char var[100];
@@ -188,21 +199,22 @@ void MyLazyCallback::main()
 
 			if (a >= inst->n && a < inst->n + 2*inst->m) {
 				servedParcels.push_back(a);
+				servedParcels.push_back(a + inst->m);
 			}
 		}
-
+		
 		int P = 2*inst->m;
 
 		map<int, vector<int>> arcOut;
 		map<int, vector<int>> arcIn;
 		set<pair<int, int>> possArcs;
 
-		arcOut[routes[k].back()] = vector<int>();
-		arcIn[routes[k][0]] = vector<int>();
+		arcOut[customersRoutes[k].back()] = vector<int>();
+		arcIn[customersRoutes[k][0]] = vector<int>();
 
-		for (int i = 0; i < routes[k].size() - 1; i++) {
-			int cur = routes[k][i];
-			int next = routes[k][i+1];
+		for (int i = 0; i < customersRoutes[k].size() - 1; i++) {
+			int cur = customersRoutes[k][i];
+			int next = customersRoutes[k][i+1];
 
 			arcOut[cur].push_back(next);
 			arcIn[next].push_back(cur);
@@ -210,7 +222,7 @@ void MyLazyCallback::main()
 			possArcs.insert(myPAir);
 
 			for (int j1 = 0; j1 < servedParcels.size(); j1++) {
-				int j = servedParcels[j1] + inst->m;
+				int j = servedParcels[j1];
 
 				pair<int, int> myPAir = make_pair(cur, j);
 				arcOut[cur].push_back(j);
@@ -220,10 +232,10 @@ void MyLazyCallback::main()
 		}
 
 		for (int i = 0; i < servedParcels.size(); i++) {
-			int delivery = servedParcels[i] + inst->m;
+			int delivery = servedParcels[i];
 
-			for (int j1 = 1; j1 < routes[k].size(); j1++) {
-				int j = routes[k][j1];
+			for (int j1 = 1; j1 < customersRoutes[k].size(); j1++) {
+				int j = customersRoutes[k][j1];
 
 				pair<int, int> myPair = make_pair(delivery, j);
 				arcOut[delivery].push_back(j);
@@ -232,7 +244,7 @@ void MyLazyCallback::main()
 			}
 
 			for (int j1 = 0; j1 < servedParcels.size(); j1++) {
-				int j = servedParcels[j1] + inst->m;
+				int j = servedParcels[j1];
 
 				if (j == delivery) {
 					continue;
@@ -307,7 +319,7 @@ void MyLazyCallback::main()
 		for (auto a : arcOut) {
 			int i = a.first;
 
-			if (i == routes[k].back()) {
+			if (i == customersRoutes[k].back()) {
 				continue;
 			}
 
@@ -326,7 +338,7 @@ void MyLazyCallback::main()
 		}
 
 		{
-			int i = routes[k].back();
+			int i = customersRoutes[k].back();
 			
 			IloExpr exp(env);
 
@@ -396,6 +408,10 @@ void MyLazyCallback::main()
 			IloExpr exp(env);
 			int i = servedParcels[i1];
 
+			if (i >= inst->n + inst->m) {
+				continue;
+			}
+
 			exp = b[i] - b[i + inst->m];
 
 			sprintf (var, "Constraint8_%d", i);
@@ -424,9 +440,9 @@ void MyLazyCallback::main()
 		}
 
 		// Constraint 10 - ensure solution sequence
-		for (int i = 0; i < routes[k].size() - 1; i++) {
-			int u = routes[k][i];
-			int v = routes[k][i + 1];
+		for (int i = 0; i < customersRoutes[k].size() - 1; i++) {
+			int u = customersRoutes[k][i];
+			int v = customersRoutes[k][i + 1];
 			IloExpr exp(env);
 
 			exp += b[v] - b[u] - nodeVec[u].delta - mdist[u][v]/inst->vmed;
@@ -458,7 +474,7 @@ void MyLazyCallback::main()
 
 		//Constraints 13 - maximum driving time
 		{
-			int i = routes[k][0];
+			int i = customersRoutes[k][0];
 			IloExpr exp(env);
 			exp = b[i + inst->K] - b[i];
 
@@ -502,26 +518,19 @@ void MyLazyCallback::main()
 				if (nSARPLazy.getValue(u[i][j]) > 0.5){
 					auxPair.first = i;
 					auxPair.second = j;
-					// cout  << i << " " << j << ": " << nSARPLazy.getValue(u[i][j]) << endl;
-					// getchar();
+					cout  << i << " " << j << ": " << nSARPLazy.getValue(u[i][j]) << endl;
 				}
 			}	
+			getchar();
+
 			count++;
 		} else {
 			// cout << "INFEASIBLE" << endl;
 			IloExpr expr(getEnv());	// Expression for the lazy constraint
 
-			vector<int> customersRoutes;
-
-			for (int i = 0; i < routes[k].size(); i++) {
-				if (routes[k][i] < inst->n || routes[k][i] >= inst->n + 2*inst->m) {
-					customersRoutes.push_back(routes[k][i]);
-				}
-			}
-
-			for (int i = 0; i < customersRoutes.size() - 1; i++) {
-				int first = customersRoutes[i];
-				int second = customersRoutes[i + 1];
+			for (int i = 0; i < customersRoutes[k].size() - 1; i++) {
+				int first = customersRoutes[k][i];
+				int second = customersRoutes[k][i + 1];
 
 				pair<int, int> myPair = make_pair(first, second);
 
@@ -610,17 +619,10 @@ void MyLazyCallback::main()
 		// cout << solVal << endl;
 		*bestSolVal = max(*bestSolVal, solVal);
 
-		vector< vector<int> > customersRoutes;
-		int _size = 0;
+		cout << *bestSolVal << endl;
+		getchar();
 
-		for (int k = 0; k < routes.size(); k++) {
-			customersRoutes.push_back(vector<int>());
-			for (int i = 0; i < routes[k].size(); i++) {
-				if (routes[k][i] < inst->n || routes[k][i] >= inst->n + 2*inst->m) {
-					customersRoutes[k].push_back(routes[k][i]);
-				}
-			}
-		}
+		int _size = 0;
 		
 		for (int k = 0; k < customersRoutes.size(); k++) {
 			_size += customersRoutes[k].size() - 1;

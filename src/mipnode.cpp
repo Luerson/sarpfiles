@@ -1727,7 +1727,6 @@ void arcBundle(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, pr
 	double bestSolVal = 0;
 	MyLazyCallback* lazyCbk = new (env) MyLazyCallback(env, x, nas, mdist, inst, problem, nodeVec, &bestSolVal, (int)nodeVec.size(), (int)inst->K, (int)inst->m, (int)inst->n);
 	nSARP.use(lazyCbk);
-	
 
     IloNum start;
     IloNum time;
