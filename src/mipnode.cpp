@@ -1716,11 +1716,12 @@ void arcBundle(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, pr
 
 	IloCplex nSARP(model);
 	nSARP.exportModel("nSARP.lp");
+	nSARP.setOut(env.getNullStream());
 	nSARP.setParam(IloCplex::Threads, threads);
 	nSARP.setParam(IloCplex::Param::TimeLimit, 7200);
 
 	// Lazy Callback
-	MyLazyCallback* lazyCbk = new (env) MyLazyCallback(env, x, nas, (int)nodeVec.size(), (int)inst->K, (int)inst->m, (int)inst->n);
+	MyLazyCallback* lazyCbk = new (env) MyLazyCallback(env, x, nas, mdist, inst, problem, nodeVec, (int)nodeVec.size(), (int)inst->K, (int)inst->m, (int)inst->n);
 	nSARP.use(lazyCbk);
 	
 
@@ -1729,16 +1730,16 @@ void arcBundle(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, pr
     start = nSARP.getTime();
 	nSARP.solve();
     time = (nSARP.getTime() - start)/threads;
-	cout  << "\nSol status: " << nSARP.getStatus() << endl;
+	// cout  << "\nSol status: " << nSARP.getStatus() << endl;
 	sStat->feasible = nSARP.isPrimalFeasible();
 
-    cout  << " Tree_Size: " <<  nSARP.getNnodes() + nSARP.getNnodesLeft() + 1 << endl;
-    cout  << " Total Time: " << time << endl;
+    // cout  << " Tree_Size: " <<  nSARP.getNnodes() + nSARP.getNnodesLeft() + 1 << endl;
+    // cout  << " Total Time: " << time << endl;
 
 	if (sStat->feasible){
 
-        cout  << " LB: " << nSARP.getObjValue() << endl;
-        cout  << " UB: " << nSARP.getBestObjValue() << endl;
+        // cout  << " LB: " << nSARP.getObjValue() << endl;
+        // cout  << " UB: " << nSARP.getBestObjValue() << endl;
         sStat->solprofit = nSARP.getObjValue();
         sStat->time = time;
 
@@ -1758,7 +1759,7 @@ void arcBundle(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, pr
 								auxPair.second = j;
 								sStat->solvec[k].push_back(auxPair);
 								sStat->solArcs[k].push_back(a);
-								cout  << i << " " << j << " " << a << " " << k << ": " << nSARP.getValue(x[i][j][a][k]) << " " << nas->sequenceProfit[make_pair(i, j)][a] << endl;
+								// cout  << i << " " << j << " " << a << " " << k << ": " << nSARP.getValue(x[i][j][a][k]) << " " << nas->sequenceProfit[make_pair(i, j)][a] << endl;
 								// getchar();
 							}
 						}

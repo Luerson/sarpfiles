@@ -2248,10 +2248,10 @@ pair<double, double> calcularProfit(const std::vector<int>& route, const std::ve
 
     // Including the minimum cost from every parcel pickup to its delivery
     double minimum_extra = 0;
-    for (int r : route)
-    {
-        minimum_extra += mdist[r][r+inst->m] * inst->costkm;
-    }
+    // for (int r : route)
+    // {
+    //     minimum_extra += mdist[r][r+inst->m] * inst->costkm;
+    // }
 
     return {profit, minimum_extra};
 }

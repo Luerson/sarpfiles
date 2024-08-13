@@ -6,6 +6,7 @@
 #define MY_LAZY_CALLBACK_H
 
 #include <ilcplex/ilocplex.h>
+#include <set>
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -24,7 +25,7 @@ class MyLazyCallback : public IloCplex::LazyConstraintCallbackI
    public:
  
         //Class constructor
-        MyLazyCallback(IloEnv env, const IloArray <IloArray < IloArray <IloBoolVarArray> > >& x_ref, nodeArcsStruct *nas, int nodes, int veic, int parcels, int customers);
+        MyLazyCallback(IloEnv env, const IloArray <IloArray < IloArray <IloBoolVarArray> > >& x_ref, nodeArcsStruct *nas, double **mdist, instanceStat *inst, probStat* problem, vector<nodeStat> &nodeVec, int nodes, int veic, int parcels, int customers);
         
         //Method that returned a callback's copy. CPLEX requirement
         IloCplex::CallbackI* duplicateCallback() const;
@@ -60,7 +61,11 @@ class MyLazyCallback : public IloCplex::LazyConstraintCallbackI
         int v;
         int nCustomers;
         int nParcels;
+        vector<nodeStat> &nodeVec;
         nodeArcsStruct* nas;
+        instanceStat *inst;
+        probStat* problem;
+        double **mdist;
 };
 /***********************************************************************/
 

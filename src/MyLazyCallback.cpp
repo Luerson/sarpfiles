@@ -4,7 +4,7 @@
 #include <list>
 
 /********************************************** Class' Constructor **********************************************/
-MyLazyCallback::MyLazyCallback(IloEnv env, const IloArray <IloArray < IloArray <IloBoolVarArray> > >& x_ref, nodeArcsStruct *arrConj, int nodes, int veic, int parcels, int customers) : IloCplex::LazyConstraintCallbackI(env), x(x_ref), x_vars(env), n(nodes), v(veic), nas(arrConj), nParcels(parcels), nCustomers(customers)
+MyLazyCallback::MyLazyCallback(IloEnv env, const IloArray <IloArray < IloArray <IloBoolVarArray> > >& x_ref, nodeArcsStruct *arrConj, double **mdist, instanceStat *inst, probStat* problem, vector<nodeStat> &nodeVec, int nodes, int veic, int parcels, int customers) : IloCplex::LazyConstraintCallbackI(env), x(x_ref), x_vars(env), mdist(mdist), inst(inst), problem(problem), nodeVec(nodeVec), n(nodes), v(veic), nas(arrConj), nParcels(parcels), nCustomers(customers)
 {
 	int num = 0;
 	/********** Filling x_vars **********/
@@ -51,7 +51,7 @@ MyLazyCallback::MyLazyCallback(IloEnv env, const IloArray <IloArray < IloArray <
 /************************** Return a callback copy. This method is a CPLEX requirement ***************************/
 IloCplex::CallbackI* MyLazyCallback::duplicateCallback() const 
 { 
-   return new (getEnv()) MyLazyCallback(getEnv(), x, nas, n, v, nParcels, nCustomers); 
+   return new (getEnv()) MyLazyCallback(getEnv(), x, nas, mdist, inst, problem, nodeVec, n, v, nParcels, nCustomers); 
 }
 /*****************************************************************************************************************/
 
@@ -72,6 +72,7 @@ void MyLazyCallback::main()
 	// Matrix to store every route in the current solution
 	vector<vector<int>> routes;
 	map<int, int> arcDirection;
+	map<pair<int, int>, int> arcChosen;
 
     // Imprimir os valores das variáveis relaxadas
     int index = 0;
@@ -84,16 +85,18 @@ void MyLazyCallback::main()
 
 			pair<int, int> myPair = make_pair(i, j);
 
-			for (int a = 0; a < nas->subsequences[])
-			for (int k1 = 0; k1 < nas->arcV[i][j].size(); k1++)
-			{
-				int k = nas->arcV[i][j][k1];
-				if (x_vals[index] > EPSILON)
+			for (int a = 0; a < nas->subsequences[myPair].size(); a++) {
+				for (int k1 = 0; k1 < nas->arcV[i][j].size(); k1++)
 				{
-					arcDirection[i] = j;
-					// // TODO UNCOMMENT // cout << i << " " << j << " " << k << endl;
+					int k = nas->arcV[i][j][k1];
+					if (x_vals[index] > EPSILON)
+					{
+						arcDirection[i] = j;
+						arcChosen[myPair] = a;
+						// // TODO UNCOMMENT // cout << i << " " << j << " " << k << endl;
+					}
+					index++;
 				}
-				index++;
 			}
         }
     }
@@ -124,10 +127,17 @@ void MyLazyCallback::main()
 		routes[i].push_back(startDepotIndex);
 		if (arcDirection.find(startDepotIndex) != arcDirection.end())
 		{
+			int prevNode = startDepotIndex;
 			for (int nextNode = arcDirection[startDepotIndex]; nextNode != finalDepotIndex; nextNode = arcDirection[nextNode])
 			{
 				// // TODO UNCOMMENT // cout << "nextNode = " << nextNode << endl;
+				pair<int, int> myPair = make_pair(prevNode, nextNode);
+
+				for (int a = 0; a < nas->subsequences[myPair][arcChosen[myPair]].size(); a++) {
+					routes[i].push_back(nas->subsequences[myPair][arcChosen[myPair]][a]);
+				}
 				routes[i].push_back(nextNode);
+				prevNode = nextNode;
 			}
 		}
 		routes[i].push_back(finalDepotIndex);
@@ -135,17 +145,495 @@ void MyLazyCallback::main()
 	// // TODO UNCOMMENT // cout << "FIM ROTAS" << endl;
 
 	// Printing the routes
-	// // TODO UNCOMMENT // cout << endl;
+	// cout << endl;
 	// for (int i = 0; i < routes.size(); i++)
 	// {
-	// 	// TODO UNCOMMENT // cout << "Route " << i << ": ";
+	// 	 cout << "Route " << i << ": ";
 	// 	for (int j = 0; j < routes[i].size()-1; j++)
 	// 	{
-	// 		// TODO UNCOMMENT // cout << routes[i][j] << " -> ";
+	// 		 cout << routes[i][j] << " -> ";
 	// 	}
-	// 	// TODO UNCOMMENT // cout << routes[i].back() << endl;
+	// 	 cout << routes[i].back() << endl;
 	// }
 	// getchar();
+
+	int count = 0;
+
+	double solVal = 0;
+
+	for (int k = 0; k < routes.size(); k++) {
+		//MIP
+		//Creating environment and model 
+		char var[100];
+		IloEnv env;
+		IloModel model(env, "nSARPLazy");
+		int currSP;
+		long M = 2*inst->T;
+		long M2 = 2*(inst->n + inst->m + 1);
+		long W = inst->m + 1;
+		int Q;
+
+		int fDepot = inst->n + 2*inst->m;
+		int fDummy = inst->n + 2*inst->m + inst->K;
+		
+		int decimalPlaces = 4;
+		double multiplier = std::pow(10, decimalPlaces);
+
+		vector< pair<int, int> > auxPairVec;
+		vector<int> servedParcels;
+		pair<int, int> auxPair;
+
+		for (int i = 0; i < routes[k].size(); i++) {
+			int a = routes[k][i];
+
+			if (a >= inst->n && a < inst->n + 2*inst->m) {
+				servedParcels.push_back(a);
+			}
+		}
+
+		int P = 2*inst->m;
+
+		map<int, vector<int>> arcOut;
+		map<int, vector<int>> arcIn;
+		set<pair<int, int>> possArcs;
+
+		arcOut[routes[k].back()] = vector<int>();
+		arcIn[routes[k][0]] = vector<int>();
+
+		for (int i = 0; i < routes[k].size() - 1; i++) {
+			int cur = routes[k][i];
+			int next = routes[k][i+1];
+
+			arcOut[cur].push_back(next);
+			arcIn[next].push_back(cur);
+			pair<int, int> myPAir = make_pair(cur, next);
+			possArcs.insert(myPAir);
+
+			for (int j1 = 0; j1 < servedParcels.size(); j1++) {
+				int j = servedParcels[j1] + inst->m;
+
+				pair<int, int> myPAir = make_pair(cur, j);
+				arcOut[cur].push_back(j);
+				arcIn[j].push_back(cur);
+				possArcs.insert(myPAir);
+			}
+		}
+
+		for (int i = 0; i < servedParcels.size(); i++) {
+			int delivery = servedParcels[i] + inst->m;
+
+			for (int j1 = 1; j1 < routes[k].size(); j1++) {
+				int j = routes[k][j1];
+
+				pair<int, int> myPair = make_pair(delivery, j);
+				arcOut[delivery].push_back(j);
+				arcIn[j].push_back(delivery);
+				possArcs.insert(myPair);
+			}
+
+			for (int j1 = 0; j1 < servedParcels.size(); j1++) {
+				int j = servedParcels[j1] + inst->m;
+
+				if (j == delivery) {
+					continue;
+				}
+
+				pair<int, int> myPair = make_pair(delivery, j);
+				arcOut[delivery].push_back(j);
+				arcIn[j].push_back(delivery);
+				possArcs.insert(myPair);
+			}
+		}
+
+		//Creating variables
+		IloArray <IloBoolVarArray> u(env, nodeVec.size());
+
+		for (int i = 0; i < nodeVec.size(); i++){
+			if (arcOut.find(i) == arcOut.end()){
+				continue; // If arc i to j is invalid
+			}
+
+			u[i] = IloBoolVarArray (env, nodeVec.size());
+			for(int j = 0; j < nodeVec.size(); ++j){
+
+				pair<int, int> myPair = make_pair(i, j);
+
+				if (possArcs.find(myPair) == possArcs.end()){
+					continue; // If arc i to j is invalid
+				}
+
+				sprintf(var, "u(%d,%d)", i, j);
+				u[i][j].setName(var);
+				model.add(u[i][j]);
+				// // TODO UNCOMMENT //  << "x: [" << i << "][" << j << "][" << k << "]" << endl;
+			}
+		}
+
+		// //creates boolean variable (y_i = 1 if node i is visited; 0 cc)
+		// IloBoolVarArray y(env, adjList.size()); 
+
+		// for (const auto& i : adjList){
+		// 	sprintf(var, "y(%d)", i.first);
+		// 	y[i.first].setName(var);
+		// 	model.add(y[i.first]);
+		// }
+
+			// Variable start of service time
+		IloNumVarArray b(env, nodeVec.size(), 9, inst->T);
+		for (const auto i : arcOut){
+			sprintf(var, "b(%d)", i.first);
+			b[i.first].setName(var);
+			model.add(b[i.first]);
+		}
+
+		IloExpr objFunction(env);
+
+		for (auto a : possArcs) {
+			int i = a.first;
+			int j = a.second;
+
+			// cout << i << " " << j << endl;
+
+			objFunction += nodeVec[i].profit * u[i][j];
+			objFunction -= (double)inst->costkm*mdist[i][j] * u[i][j];
+		}
+
+		model.add(IloMaximize(env, objFunction));
+
+		//Creating constraints
+
+		//Constraint 1 - All elements must be used
+
+		for (auto a : arcOut) {
+			int i = a.first;
+
+			if (i == routes[k].back()) {
+				continue;
+			}
+
+			IloExpr exp(env);
+
+			for (int j1 = 0; j1 < a.second.size(); j1++) {
+				int j = a.second[j1];
+
+				exp += u[i][j];
+			}
+
+			sprintf (var, "Constraint1_%d", i);
+			IloRange cons = (exp == 1);
+			cons.setName(var);
+			model.add(cons);
+		}
+
+		{
+			int i = routes[k].back();
+			
+			IloExpr exp(env);
+
+			for (int j1 = 0; j1 < arcIn[i].size(); j1++) {
+				int j = arcIn[i][j1];
+
+				exp += u[j][i];
+			}
+
+			sprintf (var, "Constraint1_%d", i);
+			IloRange cons = (exp == 1);
+			cons.setName(var);
+			model.add(cons);
+		}
+
+		//Constraint 4 - Flow conservation
+
+		for (auto a : arcOut) {
+			IloExpr exp1(env);
+			IloExpr exp2(env);
+
+			if (a.first >= inst->n + 2*inst->m) {
+				continue;
+			}
+
+			int i = a.first;
+
+			for (int b = 0; b < arcOut[i].size(); b++){
+				int j = arcOut[i][b];
+				exp1 += u[i][j];
+			}
+			//Right side: arc enters i
+			for (int b = 0; b < arcIn[i].size(); b++){
+				int j = arcOut[i][b];
+				exp2 += u[j][i];
+			}
+			sprintf (var, "Constraint4_%d_%d", a, k);
+			IloRange cons = ((exp1-exp2) == 0);
+			cons.setName(var);
+			model.add(cons);
+		}
+
+		// // Constraint 5 - route start in depot
+		// {
+		// 	IloExpr exp1(env);
+		// 	IloExpr exp2(env);
+		// 	int i = routes[k][0];
+
+		// 	for (int b = 0; b < arcOut[i].size(); b++){
+		// 		int j = arcOut[i][b];
+		// 		exp1 += x[i][j];
+		// 	}
+		// 	//Right side: arc enters i
+		// 	for (int b = 0; b < arcIn[i].size(); b++){
+		// 		int j = arcOut[i][b];
+		// 		exp2 += x[j][i];
+		// 	}
+		// 	sprintf (var, "Constraint4_%d_%d", a, k);
+		// 	IloRange cons = ((exp1-exp2) == 0);
+		// 	cons.setName(var);
+		// 	model.add(cons);
+		// }	
+
+		//Constraint 8 - service of pickup must come before the delivery
+
+		for (int i1 = 0; i1 < servedParcels.size(); i1++){
+			IloExpr exp(env);
+			int i = servedParcels[i1];
+
+			exp = b[i] - b[i + inst->m];
+
+			sprintf (var, "Constraint8_%d", i);
+			IloRange cons = (exp <= 0);
+			cons.setName(var);
+			model.add(cons);
+		}
+
+		//Constraints 9 - TW 
+
+		for (auto a : possArcs){
+			IloExpr exp(env);
+			IloExpr sumX(env);
+
+			int i = a.first;
+			int j = a.second;
+
+			double cvalue = mdist[i][j]/inst->vmed;
+			//cvalue = std::round(cvalue * multiplier) / multiplier;
+			//cvalue = timeRound(cvalue);
+			exp = b[i] - b[j] + nodeVec[i].delta + (cvalue) - M * (1 - u[i][j]);
+			sprintf (var, "Constraint9_%d_%d", i, j);
+			IloRange cons = (exp <= 0);
+			cons.setName(var);
+			model.add(cons);			
+		}
+
+		// Constraint 10 - ensure solution sequence
+		for (int i = 0; i < routes[k].size() - 1; i++) {
+			int u = routes[k][i];
+			int v = routes[k][i + 1];
+			IloExpr exp(env);
+
+			exp += b[v] - b[u] - nodeVec[u].delta - mdist[u][v]/inst->vmed;
+
+			sprintf (var, "Constraint10_%d", i);
+			IloRange cons = (exp >= 0);
+			cons.setName(var);
+			model.add(cons);
+		}
+
+		//Constraints 11 and 12 - bound the service beginning time by the earlier and later service times for each node
+
+		for (auto a : arcOut){
+			int i = a.first;
+
+			IloExpr exp(env);
+			exp = b[i];
+
+			sprintf (var, "Constraint11_%d", i);
+			IloRange cons1 = (exp <= nodeVec[i].l);
+			cons1.setName(var);
+			model.add(cons1);
+			
+			sprintf (var, "Constraint12_%d", i);
+			IloRange cons2 = (nodeVec[i].e <= exp);
+			cons2.setName(var);
+			model.add(cons2);			
+		}
+
+		//Constraints 13 - maximum driving time
+		{
+			int i = routes[k][0];
+			IloExpr exp(env);
+			exp = b[i + inst->K] - b[i];
+
+			sprintf (var, "Constraint13_%d", i);
+			IloRange cons1 = (exp <= inst->maxTime);
+			cons1.setName(var);
+			model.add(cons1);
+		}    
+
+		int threads;
+
+		threads = 1;
+
+		IloCplex nSARPLazy(model);
+		nSARPLazy.exportModel("nSARPLazy.lp");
+		nSARPLazy.setOut(env.getNullStream());
+		nSARPLazy.setParam(IloCplex::Threads, threads);
+		nSARPLazy.setParam(IloCplex::Param::TimeLimit, 7200);
+
+		IloNum start;
+		IloNum time;
+		start = nSARPLazy.getTime();
+		nSARPLazy.solve();
+		time = (nSARPLazy.getTime() - start)/threads;
+		// cout  << "\nSol status: " << nSARPLazy.getStatus() << endl;
+		// sStat->feasible = nSARPLazy.isPrimalFeasible();
+
+		if (nSARPLazy.isPrimalFeasible()) {
+			// cout << "FEASIBLE" << endl;
+			// cout << nSARPLazy.getObjValue() << endl;
+
+			solVal += nSARPLazy.getObjValue();
+			
+			for (auto a : possArcs) {
+				int i = a.first;
+				int j = a.second;
+
+				if (nSARPLazy.getValue(u[i][j]) > 0.5){
+					auxPair.first = i;
+					auxPair.second = j;
+					// cout  << i << " " << j << ": " << nSARPLazy.getValue(u[i][j]) << endl;
+					// getchar();
+				}
+			}	
+			count++;
+		} else {
+			// cout << "INFEASIBLE" << endl;
+			IloExpr expr(getEnv());	// Expression for the lazy constraint
+
+			vector<int> customersRoutes;
+
+			for (int i = 0; i < routes[k].size(); i++) {
+				if (routes[k][i] < inst->n || routes[k][i] >= inst->n + 2*inst->m) {
+					customersRoutes.push_back(routes[k][i]);
+				}
+			}
+
+			for (int i = 0; i < customersRoutes.size() - 1; i++) {
+				int first = customersRoutes[i];
+				int second = customersRoutes[i + 1];
+
+				pair<int, int> myPair = make_pair(first, second);
+
+				int a = arcChosen[myPair];
+
+				expr += x[first][second][a][k];
+			}
+
+			add(expr <= (int)routes[k].size() - 1);
+		}
+		// getchar();
+
+		// cout  << " Tree_Size: " <<  nSARP.getNnodes() + nSARP.getNnodesLeft() + 1 << endl;
+		// cout  << " Total Time: " << time << endl;
+
+		// if (sStat->feasible){
+
+		// 	// cout  << " LB: " << nSARP.getObjValue() << endl;
+		// 	// cout  << " UB: " << nSARP.getBestObjValue() << endl;
+		// 	sStat->solprofit = nSARP.getObjValue();
+		// 	sStat->solDual = nSARP.getBestObjValue();
+		// 	sStat->time = time;
+
+		// 	if (((nSARP.getBestObjValue() - nSARP.getObjValue())/nSARP.getBestObjValue()) * 100 < 0.01) {
+		// 		sStat->status = "Optimal";
+		// 	} else {
+		// 		sStat->status = "Feasible";
+		// 	}
+
+		// 	for (int k = 0; k < inst->K; k++){
+		// 		sStat->solvec.push_back(auxPairVec);
+		// 	}
+
+		// 	for (int i = 0; i < nodeVec.size(); i++){
+		// 		for(int j = 0; j < nodeVec.size(); j++){                
+		// 			if (nas->arcs[i][j] == true){
+		// 				for (int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
+		// 					int k = nas->arcV[i][j][k1];
+				
+		// 				}
+		// 			}
+		// 		}   
+		// 	}
+
+		// 	for (int i = 0; i < nodeVec.size(); i++){
+		// 		if (nSARP.getValue(b[i]) > 0){
+		// 			sStat->solBegin.push_back(nSARP.getValue(b[i]));
+		// 		}
+		// 		else {
+		// 			sStat->solBegin.push_back(0);
+		// 		}
+		// 	}
+
+		// 	for (int i = 0; i < nodeVec.size(); i++){
+		// 		if (nSARP.getValue(w[i]) > 0.5){
+		// 			sStat->solLoad.push_back(nSARP.getValue(w[i]));
+		// 		}
+		// 		else {
+		// 			sStat->solLoad.push_back(0);
+		// 		}
+		// 	}
+
+
+		// 	for (int i = 0; i < nodeVec.size(); i++){
+		// 		//if (nSARP.getValue(u[i])){
+		// 			sStat->solLoad2.push_back(nSARP.getValue(u[i]));
+		// 		//}
+		// 		//else {
+		// 		//    sStat->solLoad2.push_back(0);
+		// 		//}
+		// 	}
+
+		// }
+		// if (problem->scen == "PC"){
+		// 	nSARP.clearModel();
+		// 	nSARP.end();
+		// }
+
+		env.end();
+	}
+
+	if (count == routes.size()) {
+		// cout << "ALL ROUTES ARES FEASIBLE" << endl;
+		IloExpr expr(getEnv());	// Expression for the lazy constraint
+
+		cout << solVal << endl;
+
+		vector< vector<int> > customersRoutes;
+		int _size = 0;
+
+		for (int k = 0; k < routes.size(); k++) {
+			customersRoutes.push_back(vector<int>());
+			for (int i = 0; i < routes[k].size(); i++) {
+				if (routes[k][i] < inst->n || routes[k][i] >= inst->n + 2*inst->m) {
+					customersRoutes[k].push_back(routes[k][i]);
+				}
+			}
+		}
+		
+		for (int k = 0; k < customersRoutes.size(); k++) {
+			_size += customersRoutes[k].size() - 1;
+			for (int i = 0; i < customersRoutes[k].size() - 1; i++) {
+				int first = customersRoutes[k][i];
+				int second = customersRoutes[k][i + 1];
+
+				pair<int, int> myPair = make_pair(first, second);
+
+				int a = arcChosen[myPair];
+
+				expr += x[first][second][a][k];
+			}
+		}
+
+		add(expr <= _size - 1);
+	}
 
 
 	/**************** Creating the Lazy Co	// // TODO UNCOMMENT // cout << "aqui 2" << endl;
