@@ -1500,7 +1500,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
     IloNum start;
     IloNum time;
     start = bSARP.getTime();
-    bSARP.setOut(env.getNullStream());
+    // bSARP.setOut(env.getNullStream());
 	bSARP.solve();
     time = (bSARP.getTime() - start)/threads;
 
@@ -1510,7 +1510,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
     // cout << "here" << endl;
     // getchar();
     // cout << " Tree_Size: " <<  bSARP.getNnodes() + bSARP.getNnodesLeft() + 1 << endl;
-    // cout << " Total Time: " << time << endl;
+    cout << " Total Time: " << time << endl;
 
 	if(sStat->feasible){
 
