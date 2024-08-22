@@ -1544,6 +1544,29 @@ void fillConversor(map<tuple<int, int, int>, int> &conversor, int n, int m, int 
 	}
 }
 
+void fillConversorRV(map<int, tuple<int, int, int>> &conversor, int n, int m, int v) {
+	int perCustomer = 1 + 3*m;
+	int l = 0;
+
+	for (int i = 0; i < n; i++) {
+		conversor[l++] = make_tuple(i, i, i);
+
+		for (int j = 0; j < m; j++) {
+			conversor[l++] = make_tuple(j + n, i, j + n + m);
+			conversor[l++] = make_tuple(i, j + n, j + n + m);
+			conversor[l++] = make_tuple(j + n, j + n + m, i);
+		}
+	}
+
+	for (int i = 0; i < v; i++) {
+		conversor[l++] = make_tuple(n + 2*m + i, n + 2*m + i, n + 2*m + i);
+	}
+
+	for (int i = 0; i < v; i++) {
+		conversor[l++] = make_tuple(n + 2*m + v + i, n + 2*m + v + i, n + 2*m + v + i);
+	}
+}
+
 void fipStructBundle(instanceStat *inst, solStats *sStat, bundleStat *bStat, fipBundleStats *fipStat, string model, bool bundleRun){
 
     vector<int> pulocations;
@@ -1606,7 +1629,7 @@ void fipStructBundle(instanceStat *inst, solStats *sStat, bundleStat *bStat, fip
         vector<vector<int>> nodeRoutes;
         map<tuple<int, int, int>, int> conversor;
 
-        fillConversor(conversor, inst->n, inst->m, inst->K);  // Filling the conversor map
+        // fillConversor(conversor, inst->n, inst->m, inst->K);  // Filling the conversor map
 
         iFile >> fipStat->solprofit;
 
@@ -1615,7 +1638,7 @@ void fipStructBundle(instanceStat *inst, solStats *sStat, bundleStat *bStat, fip
 
         for (int i = 0; i < _size; i++) {
             fipStat->solPass.push_back(vector<int>());
-            nodeRoutes.push_back(vector<int>());
+            // nodeRoutes.push_back(vector<int>());
 
             int nNodes;
             iFile >> nNodes;
@@ -1624,104 +1647,106 @@ void fipStructBundle(instanceStat *inst, solStats *sStat, bundleStat *bStat, fip
                 int newElement;
                 iFile >> newElement;
 
-                nodeRoutes[i].push_back(newElement);
+                // nodeRoutes[i].push_back(newElement);
+                fipStat->solPass[i].push_back(newElement);
             }
 
             /**** Identifying and adding the variables and its values ****/
 
             // Looking for the bundles (made by customers alone or with parcels)
-            int lastCustomer    = -1;   // Index of the last customer visited that still does not belong to a bundle
-            int resourceSum = 0;    // Customer "consumes" (-1) the resource, as parcel delivery "provides" (+1)
+        //     int lastCustomer    = -1;   // Index of the last customer visited that still does not belong to a bundle
+        //     int resourceSum = 0;    // Customer "consumes" (-1) the resource, as parcel delivery "provides" (+1)
 
-            int newBundle   = -1;   // Newly made bundle. For readability reasons
+        //     int newBundle   = -1;   // Newly made bundle. For readability reasons
 
 
-            for (int j = 0; j < nNodes; j++)
-            {
-                if (nodeRoutes[i][j] >= inst->n + inst->m && nodeRoutes[i][j] < inst->n + 2*inst->m)
-                {
-                    resourceSum += 1;
-                    if (resourceSum == 0)
-                    {
-                        newBundle   = conversor[ tuple<int, int, int>(nodeRoutes[i][j-2], nodeRoutes[i][j-1], nodeRoutes[i][j]) ];
+        //     for (int j = 0; j < nNodes; j++)
+        //     {
+        //         if (nodeRoutes[i][j] >= inst->n + inst->m && nodeRoutes[i][j] < inst->n + 2*inst->m)
+        //         {
+        //             resourceSum += 1;
+        //             if (resourceSum == 0)
+        //             {
+        //                 newBundle   = conversor[ tuple<int, int, int>(nodeRoutes[i][j-2], nodeRoutes[i][j-1], nodeRoutes[i][j]) ];
 
-                    }
-                    else // There must be a customer after this delivery. Otherwise the route would be infeasible
-                    {
-                        newBundle   = conversor[ tuple<int, int, int>(nodeRoutes[i][j-1], nodeRoutes[i][j], nodeRoutes[i][j+1]) ];
-                        j++;
-                    }
-                    fipStat->solPass[i].push_back(newBundle);
+        //             }
+        //             else // There must be a customer after this delivery. Otherwise the route would be infeasible
+        //             {
+        //                 newBundle   = conversor[ tuple<int, int, int>(nodeRoutes[i][j-1], nodeRoutes[i][j], nodeRoutes[i][j+1]) ];
+        //                 j++;
+        //             }
+        //             fipStat->solPass[i].push_back(newBundle);
 
-                    resourceSum = 0;    // Restarting the resource sum
-                }
-                else if (nodeRoutes[i][j] < inst->n)
-                {
-                    if (resourceSum == -1)
-                    {
-                        newBundle  = conversor[ tuple<int, int, int>(lastCustomer, lastCustomer, lastCustomer) ];
-                        fipStat->solPass[i].push_back(newBundle);
-                    }
+        //             resourceSum = 0;    // Restarting the resource sum
+        //         }
+        //         else if (nodeRoutes[i][j] < inst->n)
+        //         {
+        //             if (resourceSum == -1)
+        //             {
+        //                 newBundle  = conversor[ tuple<int, int, int>(lastCustomer, lastCustomer, lastCustomer) ];
+        //                 fipStat->solPass[i].push_back(newBundle);
+        //             }
 
-                    resourceSum = -1;
-                    lastCustomer    = nodeRoutes[i][j];
-                }
+        //             resourceSum = -1;
+        //             lastCustomer    = nodeRoutes[i][j];
+        //         }
 
-                else if (nodeRoutes[i][j] >= inst->n + 2*inst->m)
-                {
-                    if (resourceSum == -1)
-                    {
-                        newBundle  = conversor[ tuple<int, int, int>(nodeRoutes[i][j-1], nodeRoutes[i][j-1], nodeRoutes[i][j-1]) ];
-                        fipStat->solPass[i].push_back(newBundle);
-                    }
+        //         else if (nodeRoutes[i][j] >= inst->n + 2*inst->m)
+        //         {
+        //             if (resourceSum == -1)
+        //             {
+        //                 newBundle  = conversor[ tuple<int, int, int>(nodeRoutes[i][j-1], nodeRoutes[i][j-1], nodeRoutes[i][j-1]) ];
+        //                 fipStat->solPass[i].push_back(newBundle);
+        //             }
 
-                    newBundle   = conversor[ tuple<int, int, int>(nodeRoutes[i][j], nodeRoutes[i][j], nodeRoutes[i][j]) ];
+        //             newBundle   = conversor[ tuple<int, int, int>(nodeRoutes[i][j], nodeRoutes[i][j], nodeRoutes[i][j]) ];
 
-                    fipStat->solPass[i].push_back(newBundle);
-                }
-            }
+        //             fipStat->solPass[i].push_back(newBundle);
+        //         }
+        //     }
         }
 
         iFile.close();
-    } else if (model == "bundle7" || model == "bundle8") {
+    } 
+    // else if (model == "bundle7" || model == "bundle8") {
         
-        string filename;
+    //     string filename;
 
-        if (model == "bundle7") {
-            filename = "src/Aux/bundleSolRem1/" + inst->InstName + ".txt";
-        } else if (model == "bundle8") {
-            filename = "src/Aux/bundleSolRem2/" + inst->InstName + ".txt";
-        }
+    //     if (model == "bundle7") {
+    //         filename = "src/Aux/bundleSolRem1/" + inst->InstName + ".txt";
+    //     } else if (model == "bundle8") {
+    //         filename = "src/Aux/bundleSolRem2/" + inst->InstName + ".txt";
+    //     }
 
-        ifstream iFile(filename);
+    //     ifstream iFile(filename);
 
-        if (!iFile.is_open()) {
-            cout << "falha ao abrir " << filename << endl;
-        }
+    //     if (!iFile.is_open()) {
+    //         cout << "falha ao abrir " << filename << endl;
+    //     }
 
-        iFile >> fipStat->solprofit;
+    //     iFile >> fipStat->solprofit;
 
-        int _size;
-        iFile >> _size;
+    //     int _size;
+    //     iFile >> _size;
 
-        for (int i = 0; i < _size; i++) {
-            fipStat->solPass.push_back(vector<int>());
+    //     for (int i = 0; i < _size; i++) {
+    //         fipStat->solPass.push_back(vector<int>());
 
-            int nNodes;
-            iFile >> nNodes;
+    //         int nNodes;
+    //         iFile >> nNodes;
 
-            for (int j = 0; j < nNodes; j++) {
-                int newElement;
-                iFile >> newElement;
+    //         for (int j = 0; j < nNodes; j++) {
+    //             int newElement;
+    //             iFile >> newElement;
 
-                fipStat->solPass[i].push_back(newElement);
-            }
-        }
+    //             fipStat->solPass[i].push_back(newElement);
+    //         }
+    //     }
 
-        iFile.close();
-    } else {
-        cout << "modelo " << model << " é incompatível!" << endl;
-    }
+    //     iFile.close();
+    // } else {
+    //     cout << "modelo " << model << " é incompatível!" << endl;
+    // }
 
     // for (int k = 0; k < fipStat->solPass.size(); k++) {
     //     for (int i = 0; i < fipStat->solPass[k].size(); i++) {

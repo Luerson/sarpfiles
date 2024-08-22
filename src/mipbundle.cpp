@@ -1848,8 +1848,13 @@ void fipbundle(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, bu
 	//vector< pair<int, int> > auxPairVec;
 	//pair<int, int> auxPair;
 
+    // cout << "aqui 1" << endl;
+
 	//Creating variable (i in set of assigned passengers)
     //Reduce number of variables
+    // for (int i = 0; i < bStat->bundleVec.size(); i++) {
+    //     cout << bStat->bundleStart[i] << " " << bStat->bundleEnd[i] << endl;
+    // }
 	IloArray <IloArray <IloBoolVarArray> > x(env, bStat->bundleVec.size());
 
     for (int i = 0; i < bStat->bundleVec.size(); i++){
@@ -2354,21 +2359,21 @@ void fipbundle(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, bu
     IloNum start;
     IloNum time;
     start = b2SARP.getTime();
-    b2SARP.setOut(env.getNullStream());
+    // b2SARP.setOut(env.getNullStream());
 	b2SARP.solve();
     time = (b2SARP.getTime() - start)/threads;
-	// cout << "\nSol status: " << b2SARP.getStatus() << endl;
+	cout << "\nSol status: " << b2SARP.getStatus() << endl;
 	sStat->feasible = b2SARP.isPrimalFeasible();
 
-    // cout << " Tree_Size: " <<  b2SARP.getNnodes() + b2SARP.getNnodesLeft() + 1 << endl;
-    // cout << " Total Time: " << time << endl;
+    cout << " Tree_Size: " <<  b2SARP.getNnodes() + b2SARP.getNnodesLeft() + 1 << endl;
+    cout << " Total Time: " << time << endl;
 
 	vector< pair<int, int> > auxPairVec;
     pair<int, int> auxPair;
 
 	if (sStat->feasible){
-        // cout << " LB: " << b2SARP.getObjValue() << endl;
-        // cout << " UB: " << b2SARP.getBestObjValue() << endl;
+        cout << " LB: " << b2SARP.getObjValue() << endl;
+        cout << " UB: " << b2SARP.getBestObjValue() << endl;
         fipStat->solprofit = b2SARP.getObjValue();
         sStat->time = time;
 
@@ -2390,7 +2395,7 @@ void fipbundle(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, bu
 			sStat->status = "Feasible";
 		}
 
-        // cout << "\nSolve Time: " << setprecision(15) << time << endl << endl;
+        cout << "\nSolve Time: " << setprecision(15) << time << endl << endl;
 
         sStat->solvec.clear();
 
