@@ -1866,7 +1866,7 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 	// 	}
 	// }
 
-	IloNumVarArray b(env, nodeVec.size(), 9, inst->T);
+	IloNumVarArray b(env, nodeVec.size(), 0, inst->T);
 	for (int i = 0; i < nodeVec.size(); i++){
 		sprintf(var, "b(%d)", i);
 		b[i].setName(var);
@@ -2154,12 +2154,12 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 	sStat->feasible = nSARP1.isPrimalFeasible();
 
     // // TODO UNCOMMENT //  << " Tree_Size: " <<  nSARP.getNnodes() + nSARP.getNnodesLeft() + 1 << endl;
-    cout  << " Total Time: " << time << endl;
+    // cout  << " Total Time: " << time << endl;
 
 	if (sStat->feasible){
 
-        cout << " LB: " << nSARP1.getObjValue() << endl;
-        cout  << " UB: " << nSARP1.getBestObjValue() << endl;
+        // cout << " LB: " << nSARP1.getObjValue() << endl;
+        // cout  << " UB: " << nSARP1.getBestObjValue() << endl;
         sStat->solprofit = nSARP1.getObjValue();
 		sStat->solDual = nSARP1.getBestObjValue();
         sStat->time = time;
@@ -2177,7 +2177,7 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
                             auxPair.first = i;
                             auxPair.second = j;
                             sStat->solvec[k].push_back(auxPair);
-                            // // TODO UNCOMMENT //  << i << " " << j << " " << k << ": " << nSARP1.getValue(x[i][j][k]) << endl;
+                            // cout << i << " " << j << " " << k << ": " << nSARP1.getValue(x[i][j][k]) << endl;
                             // getchar();
                         }
                     }
@@ -2216,7 +2216,6 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 
 	}
 	env.end();
-
 }
 
 void fipmip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, probStat* problem, nodeArcsStruct *nas, solStats *sStat,  fipStats *fipStat){
@@ -2580,7 +2579,7 @@ void fipmip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, probS
 	//Load constraints (33) Maybe remove it
 
 	for (int k = 0; k < fipStat->solPass.size(); k++){
-		if (fipStat->solPass[k].size() < 3){
+		if (fipStat->solPass[k].size() < 3) {
 			continue;
 		}
         for (int i = 1; i < fipStat->solPass[k].size(); i++){//maybe start from i = 0
@@ -2903,7 +2902,7 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 	}
 
 		// Variable start of service time
-	IloNumVarArray b(env, nodeVec.size(), 9, inst->T);
+	IloNumVarArray b(env, nodeVec.size(), 0, inst->T);
 	for (int i = 0; i < nodeVec.size(); i++){
 		sprintf(var, "b(%d)", i);
 		b[i].setName(var);
@@ -3162,7 +3161,7 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
         IloExpr exp(env);
         exp = b[i] - M * y[i]; 
         sprintf (var, "Constraint7_%d", i);
-        IloRange cons = (exp <= 9);
+        IloRange cons = (exp <= 0);
         cons.setName(var);
         model.add(cons);
     }

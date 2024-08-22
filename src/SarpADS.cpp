@@ -626,21 +626,21 @@ void mergeFipSol(instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, 
         }
     }
 
-    // TODO UNCOMMENT // << "\n\nFull solution: " << endl;
+    cout << "\n\nFull solution: " << endl;
 
     for (int k = 0; k < fipStat->fullSol.size(); k++){
         currDepot = 2*inst->n + 2*inst->m + k;
-        // TODO UNCOMMENT //  << "Vehicle: " << currDepot << ": ";
+        cout  << "Vehicle: " << currDepot << ": ";
         if(fipStat->fullSol[k].size() < 1){
-            // TODO UNCOMMENT //  << endl;
+            cout  << endl;
         }
         else{
             for (int j = 0; j < fipStat->fullSol[k].size(); j++){
                 if (j == fipStat->fullSol[k].size() - 1){
-                    // TODO UNCOMMENT //  << fipStat->fullSol[k][j] << endl;
+                    cout  << fipStat->fullSol[k][j] << endl;
                 }
                 else{
-                    // TODO UNCOMMENT //  << fipStat->fullSol[k][j] << " - ";
+                    cout  << fipStat->fullSol[k][j] << " - ";
                 }
                 if (fipStat->fullSol[k][j] >= 2*inst->n && fipStat->fullSol[k][j] < 2*inst->n+inst->m){
                     parcelCount++;
@@ -655,9 +655,9 @@ void mergeFipSol(instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, 
 
     for (int k = 0; k < fipStat->fullSol.size(); k++){
         currDepot = 2*inst->n + 2*inst->m + k;
-        // TODO UNCOMMENT //  << "Vehicle: " << currDepot << ": ";
+        cout  << "Vehicle: " << currDepot << ": ";
         if(fipStat->fullSol[k].size() < 1){
-            // TODO UNCOMMENT //  << endl;
+            cout  << endl;
         }
         else{
             for (int j = 0; j < fipStat->fullSol[k].size(); j++){
@@ -687,10 +687,10 @@ void mergeFipSol(instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, 
 
                 }      
                 if (j == fipStat->fullSol[k].size() - 1){
-                    // TODO UNCOMMENT //  << label << endl;
+                    cout  << label << endl;
                 }
                 else{
-                    // TODO UNCOMMENT //  << label << " - ";
+                    cout  << label << " - ";
                 }
             }
         }        
@@ -778,59 +778,59 @@ void mergeFipSol(instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, 
     }
 
 
-    // TODO UNCOMMENT // << "\n\nFull solution with times: " << endl;
+    cout << "\n\nFull solution with times: " << endl;
 
     for (int k = 0; k < fipStat->fullSol.size(); k++){
         currDepot = 2*inst->n + 2*inst->m + k;
-        // TODO UNCOMMENT //  << "Vehicle: " << currDepot << ": ";
+        cout  << "Vehicle: " << currDepot << ": ";
 
         if ( fipStat->fullSol[k].size() < 3){
-            // TODO UNCOMMENT //  << " --> Total travel time: " << 0 << endl;
+            cout  << " --> Total travel time: " << 0 << endl;
             continue;
 
         }
         for (int j = 0; j < fipStat->fullSol[k].size(); j++){
             if (j == fipStat->fullSol[k].size() - 1){
-                // TODO UNCOMMENT //  << fipStat->fullSol[k][j] << "(" << fipStat->fullBegin[k][j] << ")"<< endl;
+                cout  << fipStat->fullSol[k][j] << "(" << fipStat->fullBegin[k][j] << ")"<< endl;
             }
             else{
-                // TODO UNCOMMENT //  << fipStat->fullSol[k][j] << "(" << fipStat->fullBegin[k][j] << ")"<< " - ";
+                cout  << fipStat->fullSol[k][j] << "(" << fipStat->fullBegin[k][j] << ")"<< " - ";
             }
         }
-        // TODO UNCOMMENT //  << " --> Total travel time: " << fipStat->fullBegin[k][fipStat->fullSol[k].size()-1] - fipStat->fullBegin[k][0] << endl;
+        cout  << " --> Total travel time: " << fipStat->fullBegin[k][fipStat->fullSol[k].size()-1] - fipStat->fullBegin[k][0] << endl;
     }
 
 
 
-    // TODO UNCOMMENT //  << "_______________________________________________________" << endl;
+    cout  << "_______________________________________________________" << endl;
     for (int k = 0; k < fipStat->fullSol.size(); k++){
         for (int j = 0; j < fipStat->fullSol[k].size(); j++){
             int node = fipStat->fullSol[k][j];
             if(node < inst->n){
                 if(fipStat->fullBegin[k][j] > nodeVec[node].l){
-                    // TODO UNCOMMENT //  << "Error: Vehicle " << k << " arrives at node " << node << " after closing time" << endl;
+                    cout  << "Error: Vehicle " << k << " arrives at node " << node << " after closing time" << endl;
                     
                 }
             }
 
         }
     }
-    // TODO UNCOMMENT //  << "_______________________________________________________" << endl;
+    cout  << "_______________________________________________________" << endl;
 
-    // // TODO UNCOMMENT //  << "\n\nbegin pass vector: "<< endl;
+    // cout  << "\n\nbegin pass vector: "<< endl;
     // for(int i = 0; i < fipStat->beginPass.size(); i++){
-    //     // TODO UNCOMMENT //  << i << ": " << fipStat->beginPass[i] << " - ";
+    //     cout  << i << ": " << fipStat->beginPass[i] << " - ";
     // }
     
-    // TODO UNCOMMENT //  << "\n\nFull solution value: " << fipStat->solprofit << endl;
+    cout  << "\n\nFull solution value: " << fipStat->solprofit << endl;
 
-    // TODO UNCOMMENT //  << "\n\nServed parcels: " << parcelCount << endl;
+    cout  << "\n\nServed parcels: " << parcelCount << endl;
 
-    // TODO UNCOMMENT //  << "\n\nProfit of customers: " << profCustomer << endl;
+    cout  << "\n\nProfit of customers: " << profCustomer << endl;
 
-    // TODO UNCOMMENT //  << "\n\nProfit of parcels: " << profParcel << endl;
+    cout  << "\n\nProfit of parcels: " << profParcel << endl;
     
-    // TODO UNCOMMENT //  << "\n\nCosts: " << costs << endl;
+    cout  << "\n\nCosts: " << costs << endl;
 
     fipStatIni(fipStat);
 
@@ -1110,21 +1110,21 @@ void mergeFipSol(instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, 
         }
     }
 
-    // TODO UNCOMMENT //  << "\n*************" << endl;
+    cout  << "\n*************" << endl;
 
-    // TODO UNCOMMENT //  << "\nTotal time: " << fipStat->tPass + fipStat->tParcel + fipStat->tBoth + fipStat->tNone << endl;
-    // TODO UNCOMMENT //  << "\nTotal passenger time: " << fipStat->tPass << endl;
-    // TODO UNCOMMENT //  << "\nTotal parcel time: " << fipStat->tParcel << endl;
-    // TODO UNCOMMENT //  << "\nTotal combined transportation time: " << fipStat->tBoth << endl;
-    // TODO UNCOMMENT //  << "\nTotal idle time: " << fipStat->tNone << endl;
+    cout  << "\nTotal time: " << fipStat->tPass + fipStat->tParcel + fipStat->tBoth + fipStat->tNone << endl;
+    cout  << "\nTotal passenger time: " << fipStat->tPass << endl;
+    cout  << "\nTotal parcel time: " << fipStat->tParcel << endl;
+    cout  << "\nTotal combined transportation time: " << fipStat->tBoth << endl;
+    cout  << "\nTotal idle time: " << fipStat->tNone << endl;
 
-    // TODO UNCOMMENT //  << "\n*************" << endl;
+    cout  << "\n*************" << endl;
 
-    // TODO UNCOMMENT //  << "\nTotal distance: " << fipStat->dPass + fipStat->dParcel + fipStat->dBoth + fipStat->dNone << endl;
-    // TODO UNCOMMENT //  << "\nTotal passenger distance: " << fipStat->dPass << endl;
-    // TODO UNCOMMENT //  << "\nTotal parcel distance: " << fipStat->dParcel << endl;
-    // TODO UNCOMMENT //  << "\nTotal combined transportation distance: " << fipStat->dBoth << endl;
-    // TODO UNCOMMENT //  << "\nTotal idle distance: " << fipStat->dNone << endl;
+    cout  << "\nTotal distance: " << fipStat->dPass + fipStat->dParcel + fipStat->dBoth + fipStat->dNone << endl;
+    cout  << "\nTotal passenger distance: " << fipStat->dPass << endl;
+    cout  << "\nTotal parcel distance: " << fipStat->dParcel << endl;
+    cout  << "\nTotal combined transportation distance: " << fipStat->dBoth << endl;
+    cout  << "\nTotal idle distance: " << fipStat->dNone << endl;
 
 
 }

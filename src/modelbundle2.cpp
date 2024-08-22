@@ -7,6 +7,7 @@ void makeBundles2 (instanceStat *inst, vector<nodeStat> &nodeVec, bundleStat *bS
 //For 1A:
 //*******    
     // if (problem->scen == "1A"){
+
         int counter = 0;
         for (int i = 0; i < inst->n; i++){
             bStat->bundle.push_back(i);
@@ -64,8 +65,6 @@ void makeBundles2 (instanceStat *inst, vector<nodeStat> &nodeVec, bundleStat *bS
             cStat->clusters.clear();
         }
     // }
-
-
 
 }
 
@@ -136,16 +135,16 @@ void selectEligibleBundles(instanceStat *inst, double **mdist, vector<nodeStat> 
     for (int i = 0; i < bStat->bundleVec.size(); i++) {
         int u = bStat->firstElement[i];
 
-        for (int k = 0; k < inst->K; k++) {
-            int sDepot = bStat->firstElement[nBundles - 2*inst->K + k];
+        // for (int k = 0; k < inst->K; k++) {
+        //     int sDepot = bStat->firstElement[nBundles - 2*inst->K + k];
 
-            double earliestArrv = bStat->bundleStart[nBundles - 2*inst->K + k] + mdist[sDepot][u]/inst->vmed;
-            double latestEnd = bStat->bundleEnd[i];
+        //     double earliestArrv = bStat->bundleStart[nBundles - 2*inst->K + k] + mdist[sDepot][u]/inst->vmed;
+        //     double latestEnd = bStat->bundleEnd[i];
 
-            if (earliestArrv <= bStat->bundleStart[i] && bStat->bundleEnd[i] <= inst->T) {
+        //     if (earliestArrv <= bStat->bundleStart[i] && bStat->bundleEnd[i] <= inst->T) {
                 bStat->eligibleBundleVec[i] = true;
-            }
-        }
+        //     }
+        // }
 
         if (bStat->eligibleBundleVec[i] == false) {
             RemovedByTime.push_back(i);
@@ -547,7 +546,7 @@ void feasibleBundleArcs2 (instanceStat *inst, double **mdist, vector<nodeStat> &
                 bStat->clofbundle.push_back(currentCluster);
                 for (int j = 0; j < setN; j++){//j is not depot or dummy
                     if (i != j){
-                        if (j > currentCluster*(ref + 1) + ref || j < currentCluster*(ref + 1)){\
+                        if (j > currentCluster*(ref + 1) + ref || j < currentCluster*(ref + 1)){
                             if (bStat->bundleEnd[j] <= inst->T){
                                 if (bStat->bundleStart[j] > 0){
                                     if (bStat->bundleStart[i] + bStat->bundleServVec[i] + (mdist[bStat->lastElement[i]][bStat->firstElement[j]]/inst->vmed) <= bStat->bundleStart[j]){
@@ -960,7 +959,7 @@ void feasibleClusterArcs2 (instanceStat *inst, vector<nodeStat> &nodeVec, bundle
         if (i < setP){//i is a request bundle
             if (i > clusterA*(ref + 1) + ref){
                 clusterA++;
-            }           
+            }
         }
         else{
             if(problem->scen == "1A" || problem->scen == "1AD"){
@@ -984,7 +983,14 @@ void feasibleClusterArcs2 (instanceStat *inst, vector<nodeStat> &nodeVec, bundle
                 continue;
             }
             else{
+                // cout << i << " " << j << endl;
                 if (bStat->bArcs[i][j]){
+                    // if (i == 0) {
+                    //     cout << i << " " << j << endl;
+                    //     cout << clusterA << " " << clusterB << endl;
+                    //     cout << endl;
+                    // }
+                    // cout << i << " " << j << endl;
                     // cout << i << " " << j << endl;
                     // cout << clusterA << " " << clusterB << endl;
                     // getchar();
@@ -997,6 +1003,7 @@ void feasibleClusterArcs2 (instanceStat *inst, vector<nodeStat> &nodeVec, bundle
                 }
             }
         }
+        // getchar();
     }
 
     for (int a = 0; a < bStat->bArcVec.size(); a++){
@@ -1243,19 +1250,19 @@ void nodeSolution2 (instanceStat *inst, double **mdist, bundleStat *bStat, vecto
         for (int i = 0; i < sStat->solInNode[k].size() - 1; i++){
             if (sStat->solInNode[k][i] >= inst->n){
                 sStat->pProfit += nodeVec[sStat->solInNode[k][i]].profit;
-                // cout << sStat->solInNode[k][i] << ": " << nodeVec[sStat->solInNode[k][i]].profit << endl;
+                cout << sStat->solInNode[k][i] << ": " << nodeVec[sStat->solInNode[k][i]].profit << endl;
             }
             sStat->costs += (double)inst->costkm*mdist[sStat->solInNode[k][i]][sStat->solInNode[k][i+1]];
         }
     }
 
-    // cout << "\n\nCustomer profit: " << inst->totalCustomProfit << endl;
-    // cout << "Parcel profit: " << sStat->pProfit << endl;
-    // cout << "Costs: " << sStat->costs << endl;
+    cout << "\n\nCustomer profit: " << inst->totalCustomProfit << endl;
+    cout << "Parcel profit: " << sStat->pProfit << endl;
+    cout << "Costs: " << sStat->costs << endl;
 
-    // cout << "\nNumber of Vehicles: " << inst->K << endl;
+    cout << "\nNumber of Vehicles: " << inst->K << endl;
 
-    // cout << "\nSolution by nodes: " << endl;
+    cout << "\nSolution by nodes: " << endl;
     
     //adjust K
     int usedVehicles = 0;
@@ -1280,7 +1287,7 @@ void nodeSolution2 (instanceStat *inst, double **mdist, bundleStat *bStat, vecto
         }
         currSP = inst->n + 2*inst->m + k;
 
-        // cout << " // Bundle selection: " << (mdist[currSP][bStat->firstElement[sStat->solOrder[k][1]]]/inst->vmed);
+        cout << " // Bundle selection: " << (mdist[currSP][bStat->firstElement[sStat->solOrder[k][1]]]/inst->vmed);
 
         cout << " - Total time: " << bStat->bundleEnd[sStat->solOrder[k][sStat->solOrder[k].size()-2]] - bStat->bundleStart[sStat->solOrder[k][1]] + (mdist[currSP][bStat->firstElement[sStat->solOrder[k][1]]]/inst->vmed) << endl;
     }
@@ -2004,7 +2011,6 @@ void bundleMethod2(nodeStat *node, instanceStat *inst, double **mdist, vector<no
 
     makeSmallerProblem2(inst, nodeVec, mdist, p, clsParcel, problem, Q);
 
-
     makeBundles2(inst, nodeVec, &bStat, &cStat, clsParcel, problem);
 
     //cout << "\nBundle Vector: [";
@@ -2066,7 +2072,7 @@ void bundleMethod2(nodeStat *node, instanceStat *inst, double **mdist, vector<no
     selectEligibleBundles(inst, mdist, nodeVec, problem, &bStat);
 
     initArcs2(inst, &bStat, &cStat);
-
+    
     feasibleBundleArcs2(inst, mdist, nodeVec, &bStat, &cStat, p, problem);
 
     //For passenger only solutions:
@@ -2212,7 +2218,6 @@ void bundleMethod2(nodeStat *node, instanceStat *inst, double **mdist, vector<no
     
     if(sStat->servedParcels < inst->m){
         setUpFipBundle(inst, mdist, nodeVec, &bStat, problem, &fipStat);
-
         clearArcs(&bStat);
         initArcs2(inst, &bStat, &cStat);
         if (fipStat.solPass.size() < 1) {

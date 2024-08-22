@@ -49,11 +49,11 @@ struct instanceStat{
     int m;
     int K;
     //double T = 24;
-    double T = 19;
+    double T = 24;
 
     int V;
     //double maxTime = 8;
-	double maxTime = 10;
+	double maxTime = 8;
 
     int dummy;
     double service;

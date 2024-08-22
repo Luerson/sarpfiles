@@ -24,6 +24,8 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     inst->preInst = 0;
     inst->InstName = getInstName(argv);
 
+
+
     // TODO UNCOMMENT //  << "Instance Name: " << inst->InstName;
     // getchar();
     // if (argv[2] == "sim"){
@@ -284,9 +286,9 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
 
             for (int i = n; i < V-K; i++){
                 //ve[i] = 0;
-                ve[i] = 540;
+                ve[i] = 0;
                 //vl[i] = 1440;
-                vl[i] = 1140;
+                vl[i] = 1440;
 
             }
 
@@ -295,9 +297,9 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
             }
             for (int i = V-K; i < V; i++){
                 //ve[i] = 0;
-                ve[i] = 540;
+                ve[i] = 0;
                 //vl[i] = 1440;
-                vl[i] = 1140;
+                vl[i] = 1440;
 
                 //vl[i] = 720;
             }
@@ -308,21 +310,21 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
             // }
             for (int i = n; i < n + m; i++){//parcel PU
                 //ve[i] = 0;
-                ve[i] = 540;
+                ve[i] = 0;
                 //vl[i] = 1440;
-                vl[i] = 1140;
+                vl[i] = 1440;
             }
             for (int i = 2*n + m; i < 2*n + 2*m; i++){//parcel DL
                 //ve[i] = 0;
-                ve[i] = 540;
+                ve[i] = 0;
                 //vl[i] = 1440;
-                vl[i] = 1140;
+                vl[i] = 1440;
             }
             for (int i =  2*n + 2*m; i <  originalV; i++){//depot
                 //ve[i] = 0;
-                ve[i] = 540;
+                ve[i] = 0;
                 //vl[i] = 1440;
-                vl[i] = 1140;
+                vl[i] = 1440;
                 //vl[i] = 720;
             }
 
@@ -544,11 +546,11 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
             node->ys = 0;
             node->load = 0;
             node->load2 = 0;
-            //node->e = 0;
-            node->e = 9;
+            node->e = 0;
+            // node->e = 9;
             // node->l = 14*60;
-            //node->l = 24;
-            node->l = 19;
+            node->l = 24;
+            // node->l = 19;
             node->xf = 0;
             node->yf = 0;
             node->delta = 0;
@@ -608,6 +610,7 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
         in >> service;
         in >> n;
         in >> m;
+
         if (n > 40){
             K = floor((n+m)*0.1);
         }
@@ -752,7 +755,7 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
 
         for (int i = n + 2*m; i < vl.size(); i++){
             //vl[i] = 1440;
-            vl[i] = 1140;
+            vl[i] = 1440;
             //vl[i] = 750;
             //vl[i] = 480;
         }
@@ -952,7 +955,7 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
                 // TODO UNCOMMENT //  << "i: " << i << " - " << ve[i] << endl;
             }
 
-        }        
+        }  
 
         for (int i = 0; i < V; i++){
             node->xs = vxs[i];
@@ -991,10 +994,10 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
             node->xs = 0;
             node->ys = 0;
             node->load = 0;        
-            //node->e = 0;
-            //node->l = 24;
-            node->e = 9;
-            node->l = 19;           
+            node->e = 0;
+            node->l = 24;
+            // node->e = 9;
+            // node->l = 19;           
             node->xf = 0;
             node->yf = 0;
             node->delta = 0;

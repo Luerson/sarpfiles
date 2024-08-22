@@ -45,7 +45,7 @@ int main (int argc, char *argv[]) {
 	//while (!sStat.feasible){
 		nodeVec.clear();
 
-		readData(argc, argv, &node, &inst, nodeVec, &distMatrix, &problem, trialK, trialMulti);
+		readData(argc, argv, &node, &inst, nodeVec, &distMatrix, &problem, trialK, trialMulti); 
 		
 		hbundle h(&inst);
 		

@@ -180,6 +180,7 @@ void getInstParam (instanceStat *inst, vector<int> &instParam){
     // bundle7: execute multi insertion bundlefip with profit based selection
     // bundle8: execute multi insertion bundlefip with priority based selection
 void solveselect(nodeStat *node, instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, probStat* problem, solStats *sStat){
+
     if (problem->model == "node"){
         nodeMethod(node, inst, mdist, nodeVec, problem, sStat);
     }
