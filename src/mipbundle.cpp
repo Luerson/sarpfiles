@@ -1545,7 +1545,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
     IloNum start;
     IloNum time;
     start = bSARP.getTime();
-    // bSARP.setOut(env.getNullStream());
+    bSARP.setOut(env.getNullStream());
 	bSARP.solve();
     time = (bSARP.getTime() - start)/threads;
 
@@ -1554,7 +1554,8 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 
     // cout << "here" << endl;
     // getchar();
-    // cout << " Tree_Size: " <<  bSARP.getNnodes() + bSARP.getNnodesLeft() + 1 << endl;
+    cout << "Instance name: " << inst->InstName << endl;
+    cout << " Tree_Size: " <<  bSARP.getNnodes() + bSARP.getNnodesLeft() + 1 << endl;
     cout << " Total Time: " << time << endl;
 
 	if(sStat->feasible){
@@ -1611,7 +1612,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 		
 		for (int k = 0; k < inst->K; k++){
 			for (int i = 0; i < sStat->solvec[k].size(); i++){
-				// cout << "x(" << sStat->solvec[k][i].first << ", " << sStat->solvec[k][i].second << ", " << k << ")" << endl;
+				cout << "x(" << sStat->solvec[k][i].first << ", " << sStat->solvec[k][i].second << ", " << k << ")" << endl;
 			}
 		}		
     }

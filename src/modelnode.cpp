@@ -449,7 +449,7 @@ void fipPassSol(instanceStat *inst, fipStats *fipStat) {
 	ifstream iFile(filename);
 
     double trash;
-    iFile >> trash;
+    iFile >> fipStat->solprofit;
     iFile >> trash;
 
 	int nMandatory;
@@ -514,6 +514,10 @@ void fipPassSolBundles(instanceStat *inst, fipStats *fipStat) {
 
 	ifstream iFile(filename);
 
+    map<int, tuple<int, int, int>> conversor;
+
+    fillConversorRV(conversor, inst->n, inst->m, inst->K);
+
     double trash;
     iFile >> fipStat->solprofit;
 
@@ -530,7 +534,15 @@ void fipPassSolBundles(instanceStat *inst, fipStats *fipStat) {
             int newElement;
             iFile >> newElement;
 
-            fipStat->solPass[i].push_back(newElement);
+            int a = get<0>(conversor[newElement]);
+            int b = get<1>(conversor[newElement]);
+            int c = get<2>(conversor[newElement]);
+
+            if (a != b) {
+                fipStat->solPass[i].push_back(a);
+                fipStat->solPass[i].push_back(b);
+            }
+            fipStat->solPass[i].push_back(c);
         }
     }
 

@@ -2160,6 +2160,7 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 
         // cout << " LB: " << nSARP1.getObjValue() << endl;
         // cout  << " UB: " << nSARP1.getBestObjValue() << endl;
+		// getchar();
         sStat->solprofit = nSARP1.getObjValue();
 		sStat->solDual = nSARP1.getBestObjValue();
         sStat->time = time;
@@ -2295,6 +2296,8 @@ void fipmip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, probS
 
 	// objFunction += inst->totalCustomProfit;
 
+	objFunction += sStat->solprofit;
+
 	for (int k = 0; k < fipStat->solPass.size(); k++){
 		if (fipStat->solPass[k].size() < 3){
 			continue;
@@ -2312,7 +2315,6 @@ void fipmip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, probS
 				// objFunction += (inst->minpar + (inst->parkm*mdist[j][j+inst->m]) - (inst->costkm*deltaij)) * x[u][j][k];
 
 				objFunction += (profitj - (inst->costkm*deltaij)) * x[u][j][k];
-
 			}
 		}
     }
@@ -3546,13 +3548,13 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 	// cout  << "\nSol status: " << nSARP.getStatus() << endl;
 	sStat->feasible = nSARP.isPrimalFeasible();
 
-    // cout  << " Tree_Size: " <<  nSARP.getNnodes() + nSARP.getNnodesLeft() + 1 << endl;
-    // cout  << " Total Time: " << time << endl;
+    cout  << " Tree_Size: " <<  nSARP.getNnodes() + nSARP.getNnodesLeft() + 1 << endl;
+    cout  << " Total Time: " << time << endl;
 
 	if (sStat->feasible){
 
-        // cout  << " LB: " << nSARP.getObjValue() << endl;
-        // cout  << " UB: " << nSARP.getBestObjValue() << endl;
+        cout  << " LB: " << nSARP.getObjValue() << endl;
+        cout  << " UB: " << nSARP.getBestObjValue() << endl;
         sStat->solprofit = nSARP.getObjValue();
 		sStat->solDual = nSARP.getBestObjValue();
         sStat->time = time;
