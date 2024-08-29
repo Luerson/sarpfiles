@@ -253,7 +253,6 @@ void mipSolStats (instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec,
             // cout << "\nTotal parcel distance: " << sStat->dParcel << endl;
             // cout << "\nTotal combined transportation distance: " << sStat->dBoth << endl;
             // cout << "\nTotal idle distance: " << sStat->dNone << endl;
-            // getchar();
 
         }
     }

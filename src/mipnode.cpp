@@ -2636,7 +2636,7 @@ void fipmip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, probS
 	nSARP.setOut(env.getNullStream());
 	nSARP.exportModel("fipSARP.lp");
 	nSARP.setParam(IloCplex::Threads, threads);
-	nSARP.setParam(IloCplex::Param::TimeLimit, 7200);
+	nSARP.setParam(IloCplex::Param::TimeLimit, 300);
 	// nSARP.setParam(IloCplex::Param::Preprocessing::Aggregator, 0);
 	// nSARP.setParam(IloCplex::Param::MIP::Display, 5);
 	// nSARP.setParam(IloCplex::Param::Advance, 2);
@@ -2677,12 +2677,11 @@ void fipmip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, probS
 	cout  << "\nSol status: " << nSARP.getStatus() << endl;
 	sStat->feasible = nSARP.isPrimalFeasible();
 
+	cout << "Instance name: " << inst->InstName << endl;
     // cout  << " Tree_Size: " <<  nSARP.getNnodes() + nSARP.getNnodesLeft() + 1 << endl;
     cout  << " Total Time: " << time << endl;
 
-
 	if (sStat->feasible){
-
         cout  << " LB: " << nSARP.getObjValue() << endl;
         cout  << " UB: " << nSARP.getBestObjValue() << endl;
         sStat->solprofit = nSARP.getObjValue();
@@ -3535,10 +3534,9 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 
 	IloCplex nSARP(model);
 	nSARP.exportModel("nSARP.lp");
-	// nSARP.setOut(env.getNullStream());
-	nSARP.setParam(IloCplex::Param::MIP::Limits::Solutions, 10);
+	nSARP.setOut(env.getNullStream());
 	nSARP.setParam(IloCplex::Threads, threads);
-	nSARP.setParam(IloCplex::Param::TimeLimit, 120);
+	nSARP.setParam(IloCplex::Param::TimeLimit, 300);
 
     IloNum start;
     IloNum time;
@@ -3548,8 +3546,9 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 	// cout  << "\nSol status: " << nSARP.getStatus() << endl;
 	sStat->feasible = nSARP.isPrimalFeasible();
 
-    cout  << " Tree_Size: " <<  nSARP.getNnodes() + nSARP.getNnodesLeft() + 1 << endl;
-    cout  << " Total Time: " << time << endl;
+	cout << "Instance name: " << inst->InstName << endl;
+    cout << " Tree_Size: " <<  nSARP.getNnodes() + nSARP.getNnodesLeft() + 1 << endl;
+    cout << " Total Time: " << time << endl;
 
 	if (sStat->feasible){
 

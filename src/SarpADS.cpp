@@ -274,17 +274,15 @@ void mipSolStats (instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec,
                 }
             }
 
+            // cout  << "\nTotal passenger time: " << sStat->tPass << endl;
+            // cout  << "\nTotal parcel time: " << sStat->tParcel << endl;
+            // cout  << "\nTotal combined transportation time: " << sStat->tBoth << endl;
+            // cout  << "\nTotal idle time: " << sStat->tNone << endl;
 
-            // // TODO UNCOMMENT //  << "\nTotal passenger time: " << sStat->tPass << endl;
-            // // TODO UNCOMMENT //  << "\nTotal parcel time: " << sStat->tParcel << endl;
-            // // TODO UNCOMMENT //  << "\nTotal combined transportation time: " << sStat->tBoth << endl;
-            // // TODO UNCOMMENT //  << "\nTotal idle time: " << sStat->tNone << endl;
-
-            // // TODO UNCOMMENT //  << "\nTotal passenger distance: " << sStat->dPass << endl;
-            // // TODO UNCOMMENT //  << "\nTotal parcel distance: " << sStat->dParcel << endl;
-            // // TODO UNCOMMENT //  << "\nTotal combined transportation distance: " << sStat->dBoth << endl;
-            // // TODO UNCOMMENT //  << "\nTotal idle distance: " << sStat->dNone << endl;
-            // getchar();
+            // cout  << "\nTotal passenger distance: " << sStat->dPass << endl;
+            // cout  << "\nTotal parcel distance: " << sStat->dParcel << endl;
+            // cout  << "\nTotal combined transportation distance: " << sStat->dBoth << endl;
+            // cout  << "\nTotal idle distance: " << sStat->dNone << endl;
 
         }
     }
