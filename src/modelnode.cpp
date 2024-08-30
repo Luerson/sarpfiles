@@ -1164,51 +1164,51 @@ void viewSol (instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, sol
             // getchar();
         }
 
-        // cout  << "\nNumber of Vehicles: " << inst->K << endl;
+        cout  << "\nNumber of Vehicles: " << inst->K << endl;
 
-        // cout  << "\nSolution: " << endl;
+        cout  << "\nSolution: " << endl;
         for (int k = 0; k < inst->K; k++){
-            // cout  << "Vehicle " << k << ": ";
+            cout  << "Vehicle " << k << ": ";
             for (int i = 0; i < sStat->solOrder[k].size(); i++){
                 if (i < sStat->solOrder[k].size() - 1){
-                    // cout  << sStat->solOrder[k][i] << " - ";
+                    cout  << sStat->solOrder[k][i] << " - ";
                 }
                 else{
-                    // cout  << sStat->solOrder[k][i];
+                    cout  << sStat->solOrder[k][i];
                 }
             }
-            // cout  << " - Total time: " << sStat->solBegin[sStat->solOrder[k][sStat->solOrder[k].size()-2]] - sStat->solBegin[sStat->solOrder[k][0]] << endl;
+            cout  << " - Total time: " << sStat->solBegin[sStat->solOrder[k][sStat->solOrder[k].size()-2]] - sStat->solBegin[sStat->solOrder[k][0]] << endl;
         }
-        // cout  << endl;
+        cout  << endl;
 
         // disregard if fip
-        // cout  << "\nSolution structure: " << endl;
+        cout  << "\nSolution structure: " << endl;
         for (int k = 0; k < inst->K; k++){
-            // cout  << "Vehicle " << k << ": ";
+            cout  << "Vehicle " << k << ": ";
             for (int i = 0; i < sStat->solOrder[k].size(); i++){
                 if (i < sStat->solOrder[k].size() - 1){
                     if (sStat->solOrder[k][i] < inst->n){
-                        // cout  << "d" << " - ";
+                        cout  << "d" << " - ";
                     }
                     else if (sStat->solOrder[k][i] < inst->n + inst->m){
-                        // cout  << "P" << " - ";
+                        cout  << "P" << " - ";
                         sStat->servedParcels++;
                     }
                     else if (sStat->solOrder[k][i] < inst->n + 2*inst->m){
-                        // cout  << "D" << " - ";
+                        cout  << "D" << " - ";
                     }
                     else if (sStat->solOrder[k][i] < inst->n + 2*inst->m + inst->K){
-                        // cout  << "S" << " - ";
+                        cout  << "S" << " - ";
                     }                                      
                 }
                 else{
 
-                    // cout  << "f";
+                    cout  << "f";
                 }
             }
-            // cout  << endl;
+            cout  << endl;
         }
-        // cout  << endl;   
+        cout  << endl;   
         // getchar(); 
     // }
 }
@@ -2463,6 +2463,8 @@ void fipMethod(nodeStat *node, instanceStat *inst, double **mdist, vector<nodeSt
             output(inst, nodeVec,  sStat, problem);
         }
 	}
+
+    return;
 
     fipStat.fipstage = 1;
     fipStruct(inst, sStat, &fipStat);
