@@ -1099,9 +1099,23 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
         model.add(uf[k]);
     }
 
+    // "pMax" and "pMin"
+    IloNumVar pMax(env, -IloInfinity, IloInfinity, ILOFLOAT);
+    pMax.setName("pMax");
+    model.add(pMax);
+
+    IloNumVar pMin(env, -IloInfinity, IloInfinity, ILOFLOAT);
+    pMin.setName("pMin");
+    model.add(pMin);
+
+
 	//Creating objective function
 	
+    std::cout << "START Objective Function" << endl;
 	IloExpr objFunction(env);
+
+
+    // objFunction = pMax - pMin;
 
 	for (int a = 0; a < bStat->bArcVec.size(); a++){
         int i = bStat->bArcVec[a].first;
@@ -1132,6 +1146,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 	}
 
 	model.add(IloMaximize(env, objFunction));
+    std::cout << "END Objective Function" << endl;
 
 	//Creating constraints
 
@@ -1438,6 +1453,45 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
     }
 
 
+    // Constraint 11 - Bounds for "pMin" and "pMax" values
+    std::cout << "START Constraint 11" << endl;
+    for (int k = 0; k < inst->K; k++)
+    {
+        IloExpr exp(env);
+
+        for (int i = 0; i < bStat->vArcPlus.size(); i++)
+        {
+            for (int j = 0; j < bStat->vArcPlus[i][k].size(); j++)
+            {
+                int next = bStat->vArcPlus[i][k][j].second;
+                exp += x[i][next][k];
+            }
+        }
+
+        /////////////////////////////////////
+        sprintf(var, "Constraint11_%d_max", k);
+        IloRange consMax = (exp - pMax <= 0);
+        consMax.setName(var);
+        model.add(consMax);
+
+        sprintf(var, "Constraint11_%d_min", k);
+        IloRange consMin = (exp - pMin >= 0);
+        consMin.setName(var);
+        model.add(consMin);
+    }
+    std::cout << "END Constraint 11" << endl;
+
+
+    // Constraint 12 - Limit the difference "pMax - pMin"
+    {
+        sprintf(var, "Constraint12");
+        IloRange cons = (pMax - pMin <= 5);
+        cons.setName(var);
+        model.add(cons);
+    }
+
+
+
  //*******************************
 
     ////cout << "Before constraints" << endl;
@@ -1555,15 +1609,16 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
     // cout << "here" << endl;
     // getchar();
     // cout << " Tree_Size: " <<  bSARP.getNnodes() + bSARP.getNnodesLeft() + 1 << endl;
-    cout << " Total Time: " << time << endl;
+    std::cout << " Total Time: " << time << endl;
 
 	if(sStat->feasible){
 
-        cout << " LB: " << bSARP.getObjValue() << endl;
-        cout << " UB: " << bSARP.getBestObjValue() << endl;
+        std::cout << " Obj Value: " << bSARP.getObjValue() << endl;    
+        std::cout << " LB: " << bSARP.getObjValue() << endl;
+        std::cout << " UB: " << bSARP.getBestObjValue() << endl;
 
         solStatIni(sStat);
-		// cout << "\nObj Val: " << setprecision(15) << bSARP.getObjValue() << endl;
+		// std::cout << "\nObj Val: " << setprecision(15) << bSARP.getObjValue() << endl;
 
 		sStat->solprofit = bSARP.getObjValue();
         sStat->solDual = bSARP.getBestObjValue();
@@ -1586,7 +1641,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
         sStat->totalBundles = bStat->bundleVec.size();
         sStat->initialBundles = initialBundles;
 
-        // cout << "\nSolve Time: " << setprecision(15) << time << endl << endl;
+        // std::cout << "\nSolve Time: " << setprecision(15) << time << endl << endl;
 
 		for (int k = 0; k < inst->K; k++){
 	 		sStat->solvec.push_back(auxPairVec);
@@ -1601,7 +1656,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 							auxPair.first = i;
 							auxPair.second = j;
 							sStat->solvec[k].push_back(auxPair);
-							cout << i << " " << j << " " << k << ": " << bSARP.getValue(x[i][j][k]) << endl;
+							std::cout << i << " " << j << " " << k << ": " << bSARP.getValue(x[i][j][k]) << endl;
 							// getchar();
 						}
 					}

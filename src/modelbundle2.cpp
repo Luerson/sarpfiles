@@ -621,7 +621,7 @@ void feasibleBundleArcs2 (instanceStat *inst, double **mdist, vector<nodeStat> &
     }
 
     //remove arcs from/to bundles with negative start times
-    for (int i = 0; i < bStat->bundleStart.size() - 1; i++){
+    for (int i = 0; i < ((int) bStat->bundleStart.size()) - 1; i++){
         if (bStat->bundleStart[i] < 0){
             for (int j = 0; j < bStat->bundleVec.size() - 1; j++){
                 bStat->bArcs[j][i] = false;
