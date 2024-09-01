@@ -507,34 +507,67 @@ void fipPassSol(instanceStat *inst, fipStats *fipStat) {
 }
 
 void fipPassSolBundles(instanceStat *inst, fipStats *fipStat) {
-    int fDepot = inst->n + 2*inst->m;
-    int fDummy = inst->n + 2*inst->m + inst->K;
-
     string filename = "src/Aux/bundleSol/" + inst->InstName + ".txt";
+    ifstream iFile(filename);
 
-	ifstream iFile(filename);
+    if (!iFile.is_open()) {
+        cout << "falha ao abrir " << filename << endl;
+    }
 
-    double trash;
+    vector<vector<int>> nodeRoutes;
+    map<int, tuple<int, int, int>> conversor;
+
+    fillConversorRV(conversor, inst->n, inst->m, inst->K);  // Filling the conversor map
+
     iFile >> fipStat->solprofit;
 
-	int nRoutes;
-    iFile >> nRoutes;
+    int _size;
+    iFile >> _size;
 
-    for (int i = 0; i < nRoutes; i++) {
-        int nElements;
-        iFile >> nElements;
-
+    for (int i = 0; i < _size; i++) {
         fipStat->solPass.push_back(vector<int>());
+        nodeRoutes.push_back(vector<int>());
 
-        for (int j = 0; j < nElements; j++) {
+        int nNodes;
+        iFile >> nNodes;
+
+        for (int j = 0; j < nNodes; j++) {
             int newElement;
             iFile >> newElement;
 
-            fipStat->solPass[i].push_back(newElement);
+            nodeRoutes[i].push_back(newElement);
+        }
+
+        /**** Identifying and adding the variables and its values ****/
+
+        // Looking for the bundles (made by customers alone or with parcels)
+        int lastCustomer    = -1;   // Index of the last customer visited that still does not belong to a bundle
+        int resourceSum = 0;    // Customer "consumes" (-1) the resource, as parcel delivery "provides" (+1)
+
+        int newBundle   = -1;   // Newly made bundle. For readability reasons
+
+
+        for (int j = 0; j < nNodes; j++)
+        {
+            auto [a, b, c] = conversor[nodeRoutes[i][j]];
+
+            if (a != b) {
+                fipStat->solPass[i].push_back(a);
+                fipStat->solPass[i].push_back(b);
+            }
+            fipStat->solPass[i].push_back(c);
         }
     }
 
-	iFile.close();
+    // for (int k = 0; k < fipStat->solPass.size(); k++) {
+    //     for (int i = 0; i < fipStat->solPass[k].size(); i++) {
+    //         cout << fipStat->solPass[k][i] << " ";
+    //     }
+    //     cout << endl;
+    // }
+    // getchar();
+
+    iFile.close();
 }
 
 // void mfeasibleArcs (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist, fipStats *fipStat){

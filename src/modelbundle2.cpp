@@ -1544,6 +1544,29 @@ void fillConversor(map<tuple<int, int, int>, int> &conversor, int n, int m, int 
 	}
 }
 
+void fillConversorRV(map<int, tuple<int, int, int>> &conversor, int n, int m, int v) {
+	int perCustomer = 1 + 3*m;
+	int l = 0;
+
+	for (int i = 0; i < n; i++) {
+		conversor[l++] = make_tuple(i, i, i);
+
+		for (int j = 0; j < m; j++) {
+			conversor[l++] = make_tuple(j + n, i, j + n + m);
+			conversor[l++] = make_tuple(i, j + n, j + n + m);
+			conversor[l++] = make_tuple(j + n, j + n + m, i);
+		}
+	}
+
+	for (int i = 0; i < v; i++) {
+		conversor[l++] = make_tuple(n + 2*m + i, n + 2*m + i, n + 2*m + i);
+	}
+
+	for (int i = 0; i < v; i++) {
+		conversor[l++] = make_tuple(n + 2*m + v + i, n + 2*m + v + i, n + 2*m + v + i);
+	}
+}
+
 void fipStructBundle(instanceStat *inst, solStats *sStat, bundleStat *bStat, fipBundleStats *fipStat, string model, bool bundleRun){
 
     vector<int> pulocations;
@@ -1556,7 +1579,7 @@ void fipStructBundle(instanceStat *inst, solStats *sStat, bundleStat *bStat, fip
     int setPD; //last index of bundles before parcel only
     // setP = bStat->bundleVec.size() - (2*inst->K) - inst->m;
     
-    int fdummy;  
+    int fdummy;
 
     if (bundleRun) {
         setPD = bStat->bundleVec.size();

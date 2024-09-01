@@ -1814,11 +1814,19 @@ void printResults(instanceStat *inst, double **mdist, solStats *sStat, vector<no
 void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, probStat* problem, nodeArcsStruct *nas, solStats *sStat){
 
 	bool isFeasible = false;
+	bool prevFeasible = false;
 
 	int dif = (2*(inst->n%inst->K != 0))-2;
 
 	do {
-		dif += 2;
+		if (prevFeasible) {
+			isFeasible = true;
+		}
+
+		if (!isFeasible) {
+			dif += 2;
+		}
+
 		char var[100];
 		IloEnv env;
 		IloModel model(env, "nSARP1");
@@ -1891,25 +1899,30 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 		
 		IloExpr objFunction(env);
 
-		for (int i = 0; i < inst->n; i++){
-			for (int j = 0; j < nodeVec.size(); j++){
-				if (nas->arcs[i][j] != true){
-					continue; // If arc i to j is invalid
-				}
-				for(int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
-					int k = nas->arcV[i][j][k1];
-					objFunction += (inst->minpas + (inst->paskm*(mdist[i][i+inst->n]))) * x[i][j][k];
+		if (isFeasible) {
+			for (int i = 0; i < inst->n; i++){
+				for (int j = 0; j < nodeVec.size(); j++){
+					if (nas->arcs[i][j] != true){
+						continue; // If arc i to j is invalid
+					}
+					for(int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
+						int k = nas->arcV[i][j][k1];
+						// objFunction += (inst->minpas + (inst->paskm*(mdist[i][i+inst->n]))) * x[i][j][k];
+						objFunction += nodeVec[i].profit * x[i][j][k];
+					}
 				}
 			}
-		}
 
-		for (int i = 0; i < nodeVec.size(); i++){
-			for (int j = 0; j < nodeVec.size(); j++){
-				for (int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
-					int k = nas->arcV[i][j][k1];
-					objFunction -= (double)inst->costkm*mdist[i][j] * x[i][j][k];
+			for (int i = 0; i < nodeVec.size(); i++){
+				for (int j = 0; j < nodeVec.size(); j++){
+					for (int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
+						int k = nas->arcV[i][j][k1];
+						objFunction -= (double)inst->costkm*mdist[i][j] * x[i][j][k];
+					}
 				}
 			}
+		} else {
+			objFunction += 0;
 		}
 
 		// objFunction += Pmax - Pmin;
@@ -2241,9 +2254,7 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 		// // TODO UNCOMMENT //  << " Tree_Size: " <<  nSARP.getNnodes() + nSARP.getNnodesLeft() + 1 << endl;
 		cout  << " Total Time: " << time << endl;
 
-		if (sStat->feasible){
-			isFeasible = true;
-
+		if (sStat->feasible && isFeasible){
 			cout << " LB: " << nSARP1.getObjValue() << endl;
 			cout  << " UB: " << nSARP1.getBestObjValue() << endl;
 			sStat->solprofit = nSARP1.getObjValue();
@@ -2307,6 +2318,8 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 			printResults(inst, mdist, sStat, nodeVec);
 			// TODO UNCOMMENT //  << "After print: " << endl;
 
+		} else if (sStat->feasible) {
+			prevFeasible = true;
 		}
 
 		env.end();
@@ -2917,11 +2930,19 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 	//MIP
 	//Creating environment and model 
 	bool isFeasible = false;
+	bool prevFeasible = false;
 
-	int dif = -2;
+	int dif = -1;
 
 	do {
-		dif += 2;
+		if (prevFeasible) {
+			isFeasible = true;
+		}
+
+		if (!isFeasible) {
+			dif += 1;
+		}
+
 		char var[100];
 		IloEnv env;
 		IloModel model(env, "nSARP");
@@ -3059,50 +3080,52 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 
 		// objFunction += Pmax - Pmin;
 
-		objFunction += inst->totalCustomProfit;
+		if (isFeasible) {
+			objFunction += inst->totalCustomProfit;
 
-		for (int a = 0; a < nas->arcPN.size(); a++){
-			int i = nas->arcPN[a].first;
-			int j = nas->arcPN[a].second;
-			for(int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
-				int k = nas->arcV[i][j][k1];
-				objFunction += nodeVec[i].profit * x[i][j][k];
-			}
-		}
-
-		if (problem->dParcel > 0){
-			
-			for (int a = 0; a < nas->arcPD.size(); a++){
-				int i = nas->arcPD[a].first;
-				int j = nas->arcPD[a].second;
+			for (int a = 0; a < nas->arcPN.size(); a++){
+				int i = nas->arcPN[a].first;
+				int j = nas->arcPN[a].second;
 				for(int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
 					int k = nas->arcV[i][j][k1];
 					objFunction += nodeVec[i].profit * x[i][j][k];
 				}
 			}
 
-		}
-		if (problem->p2 > 0){
-			for (int a = 0; a < nas->arcPP.size(); a++){
-				int i = nas->arcPP[a].first;
-				int j = nas->arcPP[a].second;
-				for(int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
-					int k = nas->arcV[i][j][k1];
-					objFunction += nodeVec[i].profit * x[i][j][k];
+			if (problem->dParcel > 0){
+				
+				for (int a = 0; a < nas->arcPD.size(); a++){
+					int i = nas->arcPD[a].first;
+					int j = nas->arcPD[a].second;
+					for(int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
+						int k = nas->arcV[i][j][k1];
+						objFunction += nodeVec[i].profit * x[i][j][k];
+					}
+				}
+
+			}
+
+			if (problem->p2 > 0){
+				for (int a = 0; a < nas->arcPP.size(); a++){
+					int i = nas->arcPP[a].first;
+					int j = nas->arcPP[a].second;
+					for(int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
+						int k = nas->arcV[i][j][k1];
+						objFunction += nodeVec[i].profit * x[i][j][k];
+					}
 				}
 			}
-		}
 
-		
-
-
-		for (int a = 0; a < nas->allArcs.size(); a++){
-			int i = nas->allArcs[a].first;
-			int j = nas->allArcs[a].second;
-			for (int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
-				int k = nas->arcV[i][j][k1];
-				objFunction -= (double)inst->costkm*mdist[i][j] * x[i][j][k];
+			for (int a = 0; a < nas->allArcs.size(); a++){
+				int i = nas->allArcs[a].first;
+				int j = nas->allArcs[a].second;
+				for (int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
+					int k = nas->arcV[i][j][k1];
+					objFunction -= (double)inst->costkm*mdist[i][j] * x[i][j][k];
+				}
 			}
+		} else {
+			objFunction += 0;
 		}
 
 		//Creating extra set of summation that minimizes the number of used vehicles
@@ -3143,9 +3166,7 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 					int u = nas->vArcPlus[i][k][a].first;
 					int v = nas->vArcPlus[i][k][a].second;
 					
-					if (u < inst->n) {
-						exp -= 2*x[u][v][k];
-					} else {
+					if (u < inst->n + inst->m) {
 						exp -= x[u][v][k];
 					}
 				}
@@ -3169,9 +3190,7 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 					int u = nas->vArcPlus[i][k][a].first;
 					int v = nas->vArcPlus[i][k][a].second;
 
-					if (u < inst->n) {
-						exp -= 2*x[u][v][k];
-					} else {
+					if (u < inst->n + inst->m) {
 						exp -= x[u][v][k];
 					}
 				}
@@ -3421,8 +3440,6 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 		for (int i = 0; i < nodeVec.size(); i++){
 			IloExpr exp(env);
 			exp = b[i];
-
-			cout << nodeVec[i].e << " " << nodeVec[i].l << endl;
 
 			sprintf (var, "Constraint11_%d", i);
 			IloRange cons1 = (exp <= nodeVec[i].l);
@@ -3711,9 +3728,8 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 		IloCplex nSARP(model);
 		nSARP.exportModel("nSARP.lp");
 		// nSARP.setOut(env.getNullStream());
-		nSARP.setParam(IloCplex::Param::MIP::Limits::Solutions, 10);
 		nSARP.setParam(IloCplex::Threads, threads);
-		nSARP.setParam(IloCplex::Param::TimeLimit, 120);
+		nSARP.setParam(IloCplex::Param::TimeLimit, 7200);
 
 		IloNum start;
 		IloNum time;
@@ -3726,7 +3742,7 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 		cout  << " Tree_Size: " <<  nSARP.getNnodes() + nSARP.getNnodesLeft() + 1 << endl;
 		cout  << " Total Time: " << time << endl;
 
-		if (sStat->feasible){
+		if (sStat->feasible && isFeasible){
 			isFeasible = true;
 			cout  << " LB: " << nSARP.getObjValue() << endl;
 			cout  << " UB: " << nSARP.getBestObjValue() << endl;
@@ -3798,7 +3814,10 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 
 			printResults(inst, mdist, sStat, nodeVec);
 
+		} else if (sStat->feasible) {
+			prevFeasible = true;
 		}
+
 		if (problem->scen == "PC"){
 			nSARP.clearModel();
 			nSARP.end();
