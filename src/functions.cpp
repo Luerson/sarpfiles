@@ -219,9 +219,9 @@ void solveselect(nodeStat *node, instanceStat *inst, double **mdist, vector<node
 
     }
 
-    // else if (problem->model == "arcbundle") {
-    //     arcBundleMethod(node, inst, mdist, nodeVec, problem, sStat);
-    // }
+    else if (problem->model == "arcbundle") {
+        arcBundleMethod(node, inst, mdist, nodeVec, problem, sStat);
+    }
     // else if (){
 
     // }
