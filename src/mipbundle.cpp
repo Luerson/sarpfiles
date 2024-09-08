@@ -1028,7 +1028,8 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
     bool isFeasible = false;
     bool prevFeasible = false;
 
-    int dif = -1;
+    int dif = 0;
+    double perDif = -0.05;
 
     do {
         if (prevFeasible) {
@@ -1037,6 +1038,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 
         if (!isFeasible) {
             dif += 1;
+            perDif += 0.05;
         }
 
         //MIP
@@ -1113,14 +1115,17 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
         }
 
         // "pMax" and "pMin"
-        IloNumVar pMax(env, -IloInfinity, IloInfinity, ILOFLOAT);
+        IloNumVar pMax(env, 0.0, IloInfinity, ILOFLOAT);
         pMax.setName("pMax");
         model.add(pMax);
 
-        IloNumVar pMin(env, -IloInfinity, IloInfinity, ILOFLOAT);
+        IloNumVar pMin(env, 0.0, IloInfinity, ILOFLOAT);
         pMin.setName("pMin");
         model.add(pMin);
 
+        IloNumVar e(env, 0.0, IloInfinity, ILOFLOAT);
+        e.setName("e");
+        model.add(e);
 
         //Creating objective function
         
@@ -1128,7 +1133,6 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
         IloExpr objFunction(env);
 
         if (isFeasible) {
-            // objFunction = pMax - pMin;
 
             for (int a = 0; a < bStat->bArcVec.size(); a++){
                 int i = bStat->bArcVec[a].first;
@@ -1157,6 +1161,8 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
                 }
 
             }
+
+            objFunction -= e*inst->costkm;
         } else {
             objFunction += 0;
         }
@@ -1470,7 +1476,42 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 
 
         // Constraint 11 - Bounds for "pMin" and "pMax" values
+
+
         std::cout << "START Constraint 11" << endl;
+
+        /* Version in which the bounds are the amount of visits */
+        // for (int k = 0; k < inst->K; k++)
+        // {
+        //     IloExpr exp(env);
+
+        //     for (int i = 0; i < bStat->vArcPlus.size(); i++)
+        //     {
+        //         for (int j = 0; j < bStat->vArcPlus[i][k].size(); j++)
+        //         {
+        //             int next = bStat->vArcPlus[i][k][j].second;
+
+        //             if (bStat->bundleVec[i].size() < 2) {
+        //                 exp += x[i][next][k];
+        //             } else {
+        //                 exp += 2*x[i][next][k];
+        //             }
+        //         }
+        //     }
+
+        //     /////////////////////////////////////
+        //     sprintf(var, "Constraint11_%d_max", k);
+        //     IloRange consMax = (exp - pMax <= 0);
+        //     consMax.setName(var);
+        //     model.add(consMax);
+
+        //     sprintf(var, "Constraint11_%d_min", k);
+        //     IloRange consMin = (exp - pMin >= 0);
+        //     consMin.setName(var);
+        //     model.add(consMin);
+        // }
+
+        /* Version in which the bounds are the routes profits */
         for (int k = 0; k < inst->K; k++)
         {
             IloExpr exp(env);
@@ -1481,10 +1522,16 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
                 {
                     int next = bStat->vArcPlus[i][k][j].second;
 
+                    // cout << "mdist[" << i << "][" << next << "]" << endl;
+                    // cout << mdist[i][next] << endl;
+                    exp +=  (
+                        x[i][next][k] * mdist[ bStat->lastElement[i] ][ bStat->firstElement[next] ]
+                    );
+
                     if (bStat->bundleVec[i].size() < 2) {
-                        exp += x[i][next][k];
+                        exp += (inst->vmed*(bStat->bundleServVec[i] - 2*inst->service))*x[i][next][k];
                     } else {
-                        exp += 2*x[i][next][k];
+                        exp += (inst->vmed*(bStat->bundleServVec[i] - 4*inst->service))*x[i][next][k];
                     }
                 }
             }
@@ -1500,17 +1547,14 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
             consMin.setName(var);
             model.add(consMin);
         }
+
         std::cout << "END Constraint 11" << endl;
 
 
         // Constraint 12 - Limit the difference "pMax - pMin"
         {
-            IloExpr exp(env);
-
-            exp += pMax - pMin;
-
             sprintf(var, "Constraint12");
-            IloRange cons = (exp <= dif);
+            IloRange cons = (pMin - pMax + e >= 0);
             cons.setName(var);
             model.add(cons);
         }
@@ -1665,6 +1709,9 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 
             sStat->totalBundles = bStat->bundleVec.size();
             sStat->initialBundles = initialBundles;
+
+            // cout << bSARP.getValue(pMin) << " vs " << bSARP.getValue(pMax) << endl;
+            // getchar();
 
             // std::cout << "\nSolve Time: " << setprecision(15) << time << endl << endl;
 
