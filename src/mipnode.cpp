@@ -1817,7 +1817,7 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 	bool prevFeasible = false;
 
 	int dif = (2*(inst->n%inst->K != 0));
-	double perDif = 0.0;
+	double perDif = -0.05;
 
 	do {
 		if (prevFeasible) {
@@ -1899,10 +1899,10 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 		Pmin.setName(var);
 		model.add(Pmin);
 
-		IloNumVar e(env, 0.0, IloInfinity);
-		sprintf(var, "e");
-		e.setName(var);
-		model.add(e);
+		// IloNumVar e(env, 0.0, IloInfinity);
+		// sprintf(var, "e");
+		// e.setName(var);
+		// model.add(e);
 		
 		IloExpr objFunction(env);
 
@@ -1929,7 +1929,7 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 				}
 			}
 
-			objFunction -= 100*e*inst->costkm;
+			// objFunction -= e*inst->costkm;
 		} else {
 			objFunction += 0;
 		}
@@ -1948,6 +1948,9 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 					int v = nas->vArcPlus[i][k][a].second;
 					
 					exp += x[u][v][k] * mdist[u][v];
+					// cout << u << " " << v << endl;
+					// cout << mdist[u][v] << endl;
+					// getchar();
 				}
 			}
 
@@ -1983,7 +1986,7 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 			// cout << perDif << endl;
 			// getchar();
 			sprintf (var, "ConstraintTest3_%d");
-			IloRange cons = (Pmin - Pmax + e >= 0);
+			IloRange cons = (Pmin - (0.8 - perDif)*Pmax >= 0);
 			cons.setName(var);
 			model.add(cons);
 		}
@@ -2000,7 +2003,7 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 				exp += x[i][j][k];
 			}
 
-			sprintf (var, "Constraint1_%d", i);
+			sprintf (var, "Constraint4_%d", i);
 			IloRange cons = (exp == 1);
 			cons.setName(var);
 			model.add(cons);
@@ -2028,7 +2031,7 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 					exp += x[u][v][k];
 				}
 			}
-			sprintf (var, "Constraint2_%d", i);
+			sprintf (var, "Constraint5_%d", i);
 			IloRange cons = (exp == 0);
 			cons.setName(var);
 			model.add(cons);
@@ -2065,7 +2068,7 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 				}
 				// if (a == 4 && k == 2)
 				// 	getchar();
-				sprintf (var, "Constraint3_%d_%d", a, k);
+				sprintf (var, "Constraint6_%d_%d", a, k);
 				IloRange cons = ((exp1-exp2) == 0);
 				cons.setName(var);
 				model.add(cons);
@@ -2083,7 +2086,7 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 
 				exp += x[u][v][k];
 			}
-			sprintf (var, "Constraint4_%d", k);
+			sprintf (var, "Constraint7_%d", k);
 			IloRange cons = (exp == 1);
 			cons.setName(var);
 			model.add(cons);
@@ -2099,7 +2102,7 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 
 				exp += x[u][v][k];
 			}
-			sprintf (var, "Constraint5_%d", k);
+			sprintf (var, "Constraint8_%d", k);
 			IloRange cons = (exp == 1);
 			cons.setName(var);
 			model.add(cons);
@@ -2140,7 +2143,7 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 				double cvalue = mdist[i][j]/inst->vmed;
 				//cvalue = std::round(cvalue * multiplier) / multiplier;		
 				exp = b[i] - b[j] + nodeVec[i].delta + (cvalue) - M * (1 - sumX);
-				sprintf (var, "Constraint6_%d_%d", i, j);
+				sprintf (var, "Constraint9_%d_%d", i, j);
 				IloRange cons = (exp <= 0);
 				cons.setName(var);
 				model.add(cons);			
@@ -2172,12 +2175,12 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 			IloExpr exp(env);
 			exp = b[i];
 
-			sprintf (var, "Constraint7_%d", i);
+			sprintf (var, "Constraint10_%d", i);
 			IloRange cons1 = (exp <= nodeVec[i].l);
 			cons1.setName(var);
 			model.add(cons1);
 			
-			sprintf (var, "Constraint8_%d", i);
+			sprintf (var, "Constraint11_%d", i);
 			IloRange cons2 = (nodeVec[i].e <= exp);
 			cons2.setName(var);
 			model.add(cons2);
@@ -2189,7 +2192,7 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 			IloExpr exp(env);
 			exp = b[i + inst->K] - b[i];
 
-			sprintf (var, "Constraint9_%d", i);
+			sprintf (var, "Constraint12_%d", i);
 			IloRange cons1 = (exp <= inst->maxTime);
 			cons1.setName(var);
 			model.add(cons1);        
@@ -2207,7 +2210,7 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 					exp += x[u][v][k];
 				}
 			}
-			sprintf (var, "Constraint10_%d", i);
+			sprintf (var, "Constraint13_%d", i);
 			IloRange cons = (exp == 1);
 			cons.setName(var);
 			model.add(cons);
@@ -2234,7 +2237,7 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 		// cons.setName(var);
 		// model.add(cons);
 
-		
+
 		int threads;
 
 		threads = 1;
@@ -2254,6 +2257,8 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 		time = (nSARP1.getTime() - start)/threads;
 		// TODO UNCOMMENT //  << "\nSol status: " << nSARP1.getStatus() << endl;
 		sStat->feasible = nSARP1.isPrimalFeasible();
+
+		cout << inst->InstName << endl;
 
 		// // TODO UNCOMMENT //  << " Tree_Size: " <<  nSARP.getNnodes() + nSARP.getNnodesLeft() + 1 << endl;
 		cout  << " Total Time: " << time << endl;
@@ -2310,8 +2315,8 @@ void fippass(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 			//     }   
 			// }
 
-			cout << nSARP1.getValue(Pmin) << " vs " << nSARP1.getValue(Pmax) << endl;
-			getchar();
+			cout << "Min e Max: " << nSARP1.getValue(Pmin) << " vs " << nSARP1.getValue(Pmax) << endl;
+			// getchar();
 
 			for (int i = 0; i < nodeVec.size(); i++){
 				if (nSARP1.getValue(b[i]) > 0){
@@ -2940,6 +2945,7 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 	bool prevFeasible = false;
 
 	int dif = -1;
+	double testDif = -0.05;
 
 	do {
 		if (prevFeasible) {
@@ -2948,6 +2954,7 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 
 		if (!isFeasible) {
 			dif += 1;
+			testDif += 0.05;
 		}
 
 		char var[100];
@@ -3068,10 +3075,10 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 		Pmin.setName(var);
 		model.add(Pmin);
 
-		IloNumVar e(env, 0.0, IloInfinity, ILOFLOAT);
-		sprintf(var, "e");
-		e.setName(var);
-		model.add(e);
+		// IloNumVar e(env, 0.0, IloInfinity, ILOFLOAT);
+		// sprintf(var, "e");
+		// e.setName(var);
+		// model.add(e);
 
 		////if (problem->p1 < 1 && problem->dParcel > 0){
 		//IloNumVarArray P(env, nodeVec.size(), 1, (2*inst->m + inst->n));
@@ -3137,7 +3144,7 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 				}
 			}
 
-			objFunction -= e*inst->costkm;
+			// objFunction -= e*inst->costkm;
 		} else {
 			objFunction += 0;
 		}
@@ -3221,7 +3228,7 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 		// Maximum difference between minimum and maximum routes profit
 		{
 			sprintf (var, "ConstraintTest3_%d");
-			IloRange cons = (Pmin - Pmax + e >= 0);
+			IloRange cons = (Pmin - (0.8 - testDif)*Pmax >= 0);
 			cons.setName(var);
 			model.add(cons);
 		}
@@ -3240,7 +3247,7 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 					exp += x[u][v][k];
 				}
 
-				sprintf (var, "Constraint1_%d", i1);
+				sprintf (var, "Constraint4_%d", i1);
 				IloRange cons = (exp == 1);
 				cons.setName(var);
 				model.add(cons);
@@ -3301,7 +3308,7 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 				}
 
 				exp2 += y[i];
-				sprintf (var, "Constraint2_%d", i);
+				sprintf (var, "Constraint5_%d", i);
 				IloRange cons = (exp - exp2 == 0);
 				// IloRange cons = (exp == 1);
 				cons.setName(var);
@@ -3329,7 +3336,7 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 
 					exp2 += x[u][v][k];
 				}
-				sprintf (var, "Constraint3_%d_%d", i, k);
+				sprintf (var, "Constraint6_%d_%d", i, k);
 				IloRange cons = ((exp1-exp2) == 0);
 				cons.setName(var);
 				model.add(cons);
@@ -3355,7 +3362,7 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 					exp2 += x[i][j][k];
 
 				}
-				sprintf (var, "Constraint4_%d_%d", a, k);
+				sprintf (var, "Constraint7_%d_%d", a, k);
 				IloRange cons = ((exp1-exp2) == 0);
 				cons.setName(var);
 				model.add(cons);
@@ -3367,7 +3374,7 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 		for (int i = 0; i < fDepot; i++){
 			IloExpr exp(env);
 			exp = b[i] - M * y[i]; 
-			sprintf (var, "Constraint7_%d", i);
+			sprintf (var, "Constraint8_%d", i);
 			IloRange cons = (exp <= 0);
 			cons.setName(var);
 			model.add(cons);
@@ -3379,7 +3386,7 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 			IloExpr exp(env);
 			exp = b[i] - b[i + inst->m];
 
-			sprintf (var, "Constraint8_%d", i);
+			sprintf (var, "Constraint9_%d", i);
 			IloRange cons = (exp <= 0);
 			cons.setName(var);
 			model.add(cons);
@@ -3400,7 +3407,7 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 				//cvalue = std::round(cvalue * multiplier) / multiplier;
 				//cvalue = timeRound(cvalue);
 				exp = b[i] - b[j] + nodeVec[i].delta + (cvalue) - M * (1 - sumX);
-				sprintf (var, "Constraint9_%d_%d", i, j);
+				sprintf (var, "Constraint10_%d_%d", i, j);
 				IloRange cons = (exp <= 0);
 				cons.setName(var);
 				model.add(cons);			
@@ -3752,6 +3759,8 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 		// cout  << "\nSol status: " << nSARP.getStatus() << endl;
 		sStat->feasible = nSARP.isPrimalFeasible();
 
+		cout << inst->InstName << endl;
+
 		cout  << " Tree_Size: " <<  nSARP.getNnodes() + nSARP.getNnodesLeft() + 1 << endl;
 		cout  << " Total Time: " << time << endl;
 
@@ -3801,6 +3810,8 @@ void mipnodefip(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, p
 			}
 
 			cout << "total profit: " << totalProfit << endl;
+
+			cout << "Min e Max: " << nSARP.getValue(Pmin) << " vs " << nSARP.getValue(Pmax) << endl;
 
 			for (int i = 0; i < nodeVec.size(); i++){
 				if (nSARP.getValue(b[i]) > 0){

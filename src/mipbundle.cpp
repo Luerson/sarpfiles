@@ -1162,7 +1162,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 
             }
 
-            objFunction -= e*inst->costkm;
+            // objFunction -= e*inst->costkm;
         } else {
             objFunction += 0;
         }
@@ -1530,8 +1530,24 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 
                     if (bStat->bundleVec[i].size() < 2) {
                         exp += (inst->vmed*(bStat->bundleServVec[i] - 2*inst->service))*x[i][next][k];
+                        
+                        // for (int z = 0; z < bStat->bundleVec[i].size(); z++) {
+                        //     cout << bStat->bundleVec[i][z] << " ";
+                        // }
+                        // cout << endl;
+                        // cout << "distance = " << inst->vmed*(bStat->bundleServVec[i] - 2*inst->service) << endl;
+                        // cout << endl;
+                        // getchar();
                     } else {
                         exp += (inst->vmed*(bStat->bundleServVec[i] - 4*inst->service))*x[i][next][k];
+
+                        // for (int z = 0; z < bStat->bundleVec[i].size(); z++) {
+                        //     cout << bStat->bundleVec[i][z] << " ";
+                        // }
+                        // cout << endl;
+                        // cout << "distance = " << inst->vmed*(bStat->bundleServVec[i] - 4*inst->service) << endl;
+                        // cout << endl;
+                        // getchar();
                     }
                 }
             }
@@ -1554,7 +1570,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
         // Constraint 12 - Limit the difference "pMax - pMin"
         {
             sprintf(var, "Constraint12");
-            IloRange cons = (pMin - pMax + e >= 0);
+            IloRange cons = (pMin - (0.8 - perDif)*pMax >= 0);
             cons.setName(var);
             model.add(cons);
         }
@@ -1668,9 +1684,11 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
         IloNum start;
         IloNum time;
         start = bSARP.getTime();
-        // bSARP.setOut(env.getNullStream());
+        bSARP.setOut(env.getNullStream());
         bSARP.solve();
         time = (bSARP.getTime() - start)/threads;
+        
+        cout << inst->InstName << endl;
 
         // cout << "\nSol status: " << bSARP.getStatus() << endl;
         sStat->feasible = bSARP.isPrimalFeasible();
@@ -1735,6 +1753,8 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
                     }
                 }	
             }
+
+            cout << "Min e Max: " << bSARP.getValue(pMin) << " vs " << bSARP.getValue(pMax) << endl;
             
             for (int k = 0; k < inst->K; k++){
                 for (int i = 0; i < sStat->solvec[k].size(); i++){
