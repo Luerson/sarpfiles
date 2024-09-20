@@ -8,52 +8,109 @@ void makeBundles2 (instanceStat *inst, vector<nodeStat> &nodeVec, bundleStat *bS
 //*******    
     // if (problem->scen == "1A"){
 
-        int counter = 0;
         for (int i = 0; i < inst->n; i++){
             bStat->bundle.push_back(i);
             bStat->bundleVec.push_back(bStat->bundle);
             // cStat->clusters.push_back(bStat->bundle);
             cStat->clusters.push_back(bStat->bundleVec.size()-1);
             bStat->bundle.clear();
+
+            // Para todas as parcels relacionadas ao cliente. Inicialmente todas são relacionadas,
+            // mas no índice do cliente (clsParcel[customer][parcel]) temos informações a respeito da relação
+            // customer-parcel, como a soma das distâncias customer-pickup e customer-delivery
             for (int j = 0; j < clsParcel[i].size(); j++){
-                double bundledelta = nodeVec[clsParcel[i][j].parcelreq].delta + nodeVec[i].delta + nodeVec[clsParcel[i][j].parcelreq + inst->m].delta;
-                
+
+                // Soma dos tempos tempos de serviço do customer e parcel (pickup e delivery)
+                double completeBundleDelta = nodeVec[clsParcel[i][j].parcelreq].delta + nodeVec[i].delta + nodeVec[clsParcel[i][j].parcelreq + inst->m].delta;
+                double bundleDelta = -1;
+
                 //passenger in the middle
                 bStat->bundle.push_back(clsParcel[i][j].parcelreq);
                 bStat->bundle.push_back(i);
                 bStat->bundle.push_back(clsParcel[i][j].parcelreq + inst->m);
-                bStat->bundleTimes.push_back(bundledelta);
+
+                bundleDelta = completeBundleDelta;
+                bStat->bundleTimes.push_back(bundleDelta);
                 bStat->bundleVec.push_back(bStat->bundle);
+
                 cStat->clusters.push_back(bStat->bundleVec.size()-1);
+
+                bundleDelta = -1;
                 bStat->bundle.clear();
 
                 //passenger at the beginning
-                bStat->bundle.push_back(i);
+                // bStat->bundle.push_back(i);
 
-                bStat->bundle.push_back(clsParcel[i][j].parcelreq);
-                bStat->bundle.push_back(clsParcel[i][j].parcelreq + inst->m);
+                // bStat->bundle.push_back(clsParcel[i][j].parcelreq);
+                // bStat->bundle.push_back(clsParcel[i][j].parcelreq + inst->m);
 
-                bStat->bundleTimes.push_back(bundledelta);
-                bStat->bundleVec.push_back(bStat->bundle);
-                cStat->clusters.push_back(bStat->bundleVec.size()-1);
-                bStat->bundle.clear();
+                // bStat->bundleTimes.push_back(completeBundleDelta);
+                // bStat->bundleVec.push_back(bStat->bundle);
+                // cStat->clusters.push_back(bStat->bundleVec.size()-1);
+                // bStat->bundle.clear();
+
                 //passenger at the end
+                // bStat->bundle.push_back(clsParcel[i][j].parcelreq);
+                // bStat->bundle.push_back(clsParcel[i][j].parcelreq + inst->m);
+                // bStat->bundle.push_back(i);
 
+                // bStat->bundleTimes.push_back(completeBundleDelta);
+                // bStat->bundleVec.push_back(bStat->bundle);
+                // cStat->clusters.push_back(bStat->bundleVec.size()-1);
+                // bStat->bundle.clear();
+
+                /* Parcel pickup and Customer: P - d */
                 bStat->bundle.push_back(clsParcel[i][j].parcelreq);
-                bStat->bundle.push_back(clsParcel[i][j].parcelreq + inst->m);
                 bStat->bundle.push_back(i);
 
-                bStat->bundleTimes.push_back(bundledelta);
+                bundleDelta = completeBundleDelta - nodeVec[clsParcel[i][j].parcelreq + inst->m].delta;
+                bStat->bundleTimes.push_back(bundleDelta);
                 bStat->bundleVec.push_back(bStat->bundle);
+
                 cStat->clusters.push_back(bStat->bundleVec.size()-1);
+
+                bundleDelta = -1;
                 bStat->bundle.clear();
 
+                /* Customer and Parcel delivery: d - D */
+                bStat->bundle.push_back(i);
+                bStat->bundle.push_back(clsParcel[i][j].parcelreq + inst->m);
+
+                bundleDelta = completeBundleDelta - nodeVec[clsParcel[i][j].parcelreq].delta;
+                bStat->bundleTimes.push_back(bundleDelta);
+                bStat->bundleVec.push_back(bStat->bundle);
+
+                cStat->clusters.push_back(bStat->bundleVec.size()-1);
+
+                bundleDelta = -1;
+                bStat->bundle.clear();
             }
             cStat->clusterVec.push_back(cStat->clusters);
             cStat->clusters.clear();
         }
 
-        for (int i = 2*inst->m + inst->n; i < nodeVec.size(); i++){ //start and end bundles.
+        /* Only Parcel bundles */
+        for (int i = inst->n; i < inst->n + inst->m; i++)
+        {
+            // Soma dos tempos tempos de serviço da parcel (pickup e delivery)
+            double bundleDelta = nodeVec[i].delta + nodeVec[i + inst->m].delta;
+
+            bStat->bundle.push_back(i);
+            bStat->bundle.push_back(i + inst->m);
+
+            bStat->bundleTimes.push_back(bundleDelta);
+            bStat->bundleVec.push_back(bStat->bundle);
+
+            cStat->clusters.push_back(bStat->bundleVec.size()-1);
+            cStat->clusterVec.push_back(cStat->clusters);
+            
+            // Limpando as estruturas temporárias
+            bStat->bundle.clear();
+            cStat->clusters.clear();
+        }
+
+        /* start and end bundles */
+        for (int i = 2*inst->m + inst->n; i < nodeVec.size(); i++){
             
             bStat->bundle.push_back(i);
             bStat->bundleVec.push_back(bStat->bundle);
@@ -469,6 +526,9 @@ void makeSmallerProblem2(instanceStat *inst, vector<nodeStat> &nodeVec, double *
         int counter;
         bParcelStruct bps;
 
+        // std::cout << "p = " << p << endl;
+        // getchar();
+
         if (p > -1 && p != 0){
             for (int i = 0; i < inst->n; i++){
 
@@ -499,20 +559,28 @@ void makeSmallerProblem2(instanceStat *inst, vector<nodeStat> &nodeVec, double *
         }
 
         else{
+
+            // Para cada cliente
             for (int i = 0; i < inst->n; i++){
+
+                // Para cada pickup de parcel
                 for (int j = inst->n; j < inst->n + inst->m; j++){
-                    bps.cost = mdist[j][i];
-                    bps.parcelreq = j;
+                    bps.cost = mdist[j][i];     // Distância do customer para o pickup da parcel: d - P
+                    bps.parcelreq = j;          // Índice da parcel: inst->n <= parcelreq < inst->n + inst->m
                     vecOfDist.push_back(bps);
                 }
-                counter = 0;
+
+                // Para cada delivery de parcel
+                counter = 0;    // Para usar o índice correto no vetor vecOfDist
                 for (int j = inst->n + inst->m; j < inst->n + 2*inst->m; j++){
                     vecOfDist[counter].cost += mdist[i][j];
                     counter++;
                 }
+
+                // 
                 for (int j = 0; j < inst->m; j++){
                     // clsParcel[i].push_back(vecOfDist[j].parcelreq);
-                    clsParcel[i].push_back(vecOfDist[j]);
+                    clsParcel[i].push_back(vecOfDist[j]);   // Adiciona o vetor de informações das parcels a respeito do cliente "i"
                 }
                 vecOfDist.clear();
             }
@@ -2021,7 +2089,10 @@ void bundleMethod2(nodeStat *node, instanceStat *inst, double **mdist, vector<no
     fipBundleStats fipStat;
     clSt cStat;
 
-    vector< vector<bParcelStruct> > clsParcel;
+    vector< vector<bParcelStruct> > clsParcel;  // Vetor no formato clsParcel[customer][parcel]:
+                                                // 0 <= customer < inst-> n
+                                                // inst->n <= parcel < inst->n + inst->m
+
 
     int p = -1; //number of parcel requests to be associated with a passenger request(1A) or the number of best matchings
     int Q = 5;

@@ -75,9 +75,13 @@ struct clSt{
 };
 
 struct bParcelStruct{
-	double cost;
-	int parcelreq;
-	bool poslabel; //1 if parcel is after passenger request in the bundle, 0 if it is before.
+	double cost;	// Distância do customer para o pickup e o delivery da parcel:
+					// mdist[customer][pickup] + mdist[customer][delivery];
+					// d - P
+
+	int parcelreq;	// Índice da parcel: inst->n <= parcelreq < inst->n + inst->m
+
+	bool poslabel; 	//1 if parcel is after passenger request in the bundle, 0 if it is before.
 };
 
 
