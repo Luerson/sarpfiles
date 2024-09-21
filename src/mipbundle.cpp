@@ -1041,6 +1041,8 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 	int currCluster;
 	vector< pair<int, int> > auxPairVec;
 	pair<int, int> auxPair;
+    int M = 2*inst->T;
+    int W = inst->m + 1;
 
     // if (problem->scen == "1AD"){
     //     setP = bStat->bundleVec.size() - (2*inst->K) - inst->m;
@@ -1053,8 +1055,8 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
         setP = bStat->bundleVec.size() - (2*inst->K);
         setN = setP;
 
-        csetP = cStat->clusterVec.size() - (inst->K*2);
-        csetN = csetP;
+        csetP = cStat->clusterVec.size() - (inst->K*2) - inst->m;
+        csetN = csetP + inst->m;
     // }
 
 	//Creating variables
@@ -1081,25 +1083,52 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 	}
 
     // Variable start of service time depot
-    IloNumVarArray u(env, inst->K, 0, inst->T);
+    IloNumVarArray b(env, bStat->bundleVec.size(), 0, inst->T);
 
-    for (int k = 0; k < inst->K; k++){
-        sprintf(var, "u(%d)", k);
-        u[k].setName(var);
-        model.add(u[k]);
+    for (int k = 0; k < bStat->bundleVec.size(); k++){
+        sprintf(var, "b(%d)", k);
+        b[k].setName(var);
+        model.add(b[k]);
     }
 
-    // Variable start of service time dummy
+    // Variable start of service time depot
+    IloNumVarArray w(env, bStat->bundleVec.size(), 0, 1);
 
-    IloNumVarArray uf(env, inst->K, 0, inst->T);
-
-    for (int k = 0; k < inst->K; k++){
-        sprintf(var, "uf(%d)", k);
-        uf[k].setName(var);
-        model.add(uf[k]);
+    for (int k = 0; k < bStat->bundleVec.size(); k++){
+        sprintf(var, "w(%d)", k);
+        w[k].setName(var);
+        model.add(w[k]);
     }
+
+    IloBoolVarArray y(env, bStat->bundleVec.size());
+
+    for (int k = 0; k < bStat->bundleVec.size(); k++){
+        sprintf(var, "y(%d)", k);
+        y[k].setName(var);
+        model.add(y[k]);
+    }
+
+    // // Variable start of service time dummy
+
+    // IloNumVarArray uf(env, inst->K, 0, inst->T);
+
+    // for (int k = 0; k < inst->K; k++){
+    //     sprintf(var, "uf(%d)", k);
+    //     uf[k].setName(var);
+    //     model.add(uf[k]);
+    // }
 
 	//Creating objective function
+
+    for (int i = 0; i < bStat->bundleVec.size(); i++) {
+        cout << "sequence " << i << ": ";
+
+        for (int j = 0; j < bStat->bundleVec[i].size(); j++) {
+            cout << bStat->bundleVec[i][j] << " ";
+        }
+        cout << endl;
+    }
+    getchar();
 	
 	IloExpr objFunction(env);
 
@@ -1156,25 +1185,27 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 		model.add(cons1);
 	}
 
-    for (int i = 0; i < csetP; i++){
-        IloExpr exp(env);
-        for (int k = 0; k < inst->K; k++){
-            for (int a = 0; a < cStat->vArcMinus[i][k].size(); a++){
-                int u = cStat->vArcMinus[i][k][a].first;
-                int v = cStat->vArcMinus[i][k][a].second;
+    // model.add(x[89][34][0] == 1);
 
-                exp += x[u][v][k];
-            }
-        }
-        sprintf (var, "Constraint2_%d", i);
-        IloRange cons = (exp == 1);
-        cons.setName(var);
-        model.add(cons);
-    }
+    // for (int i = 0; i < csetP; i++){
+    //     IloExpr exp(env);
+    //     for (int k = 0; k < inst->K; k++){
+    //         for (int a = 0; a < cStat->vArcMinus[i][k].size(); a++){
+    //             int u = cStat->vArcMinus[i][k][a].first;
+    //             int v = cStat->vArcMinus[i][k][a].second;
+
+    //             exp += x[u][v][k];
+    //         }
+    //     }
+    //     sprintf (var, "Constraint2_%d", i);
+    //     IloRange cons = (exp == 1);
+    //     cons.setName(var);
+    //     model.add(cons);
+    // }
 
     // if (problem->scen == "1AD"){
     //     //at most one arc leaves parcel only clusters
-    //     for (int i = csetP; i < csetN; i++){
+    //     for (int i = csetP - inst->m; i < csetN; i++){
     //         IloExpr exp(env);
     //         for (int k = 0; k < inst->K; k++){
     //             for (int a = 0; a < cStat->vArcPlus[i][k].size(); a++){
@@ -1191,7 +1222,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
     //     }
         
     //     //at most one arc arrives at parcel only clusters
-    //     for (int i = csetP; i < csetN; i++){
+    //     for (int i = csetP - inst->m; i < csetN; i++){
     //         IloExpr exp(env);
     //         for (int k = 0; k < inst->K; k++){
     //             for (int a = 0; a < cStat->vArcMinus[i][k].size(); a++){
@@ -1239,6 +1270,37 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 		cons.setName(var);
 		model.add(cons);
 	}
+
+    // getchar();
+
+    // {
+    //     IloExpr exp(env);
+
+    //     for (int k = 0; k < inst->K; k++){
+    //         for (int a = 0; a < bStat->vArcPlus[83][k].size(); a++){
+    //             int u = bStat->vArcPlus[83][k][a].first;
+    //             int v = bStat->vArcPlus[83][k][a].second;
+    //             // cout << u << " " << v << endl;
+    //             exp += x[u][v][k];
+
+    //             // cout << "sequence " << k << ": ";
+
+    //             // for (int a = 0; a < bStat->bundleVec[u].size(); a++) {
+    //             //     cout << bStat->bundleVec[u][a] << " ";
+    //             // }
+    //             // cout << "- ";
+    //             // for (int a = 0; a < bStat->bundleVec[v].size(); a++) {
+    //             //     cout << bStat->bundleVec[v][a] << " ";
+    //             // }
+    //             // cout << endl;
+    //         }
+    //     }
+
+    //     sprintf (var, "Constraint15");
+	// 	IloRange cons = (exp == 1);
+	// 	cons.setName(var);
+	// 	model.add(cons);
+    // }
     // getchar();
 
 	// // Constraint 4 - Each used vehicle ends the trip at the dummy node f
@@ -1268,20 +1330,33 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 		currParcel = inst->n + i;
 		for (int j = 0; j < bStat->parcelBundleVec[i].size(); j++){
             int h = bStat->parcelBundleVec[i][j];
+
 			for (int k = 0; k < inst->K; k++){    
                 for (int a = 0; a < bStat->vArcPlus[h][k].size(); a++){
                     int u = bStat->vArcPlus[h][k][a].first;
                     int v = bStat->vArcPlus[h][k][a].second;
 
-					exp += x[u][v][k];
+                    exp += x[u][v][k];
+
+                    // cout << "sequence " << k << ": ";
+
+                    // for (int a = 0; a < bStat->bundleVec[u].size(); a++) {
+                    //     cout << bStat->bundleVec[u][a] << " ";
+                    // }
+                    // cout << "- ";
+                    // for (int a = 0; a < bStat->bundleVec[v].size(); a++) {
+                    //     cout << bStat->bundleVec[v][a] << " ";
+                    // }
+                    // cout << endl;
 				}
 			}
 		}
+
 		sprintf (var, "Constraint5_%d", currParcel);
 		IloRange cons = (exp <= 1);
 		cons.setName(var);
 		model.add(cons);
-	}	
+	}
 
 	// //Constraint 6 - Flow conservation between clusters(bundles)
 
@@ -1294,6 +1369,19 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
                 int u = bStat->vArcPlus[i][k][a].first;
                 int v = bStat->vArcPlus[i][k][a].second;
 				exp1 += x[u][v][k];
+
+                if (u == 89) {
+                    cout << "sequence " << k << ": ";
+
+                    for (int a = 0; a < bStat->bundleVec[u].size(); a++) {
+                        cout << bStat->bundleVec[u][a] << " ";
+                    }
+                    cout << "- ";
+                    for (int a = 0; a < bStat->bundleVec[v].size(); a++) {
+                        cout << bStat->bundleVec[v][a] << " ";
+                    }
+                    cout << endl;
+                }
 			}
 
 			for (int a = 0; a < bStat->vArcMinus[i][k].size(); a++){
@@ -1301,6 +1389,20 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
                 int v = bStat->vArcMinus[i][k][a].second;       
                          
 				exp2 += x[u][v][k];
+
+                if (v == 34) {
+
+                    cout << "sequence " << k << ": ";
+
+                    for (int a = 0; a < bStat->bundleVec[u].size(); a++) {
+                        cout << bStat->bundleVec[u][a] << " ";
+                    }
+                    cout << "- ";
+                    for (int a = 0; a < bStat->bundleVec[v].size(); a++) {
+                        cout << bStat->bundleVec[v][a] << " ";
+                    }
+                    cout << endl;
+                }
 			}
 
 			sprintf (var, "Constraint6_%d_%d", i, k);
@@ -1309,6 +1411,240 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 			model.add(cons);			
 		}
 	}
+    getchar();
+
+    for (int i = 0; i < inst->m; i++){
+		for (int k = 0; k < inst->K; k++){
+			IloExpr exp1(env);
+			IloExpr exp2(env);
+
+            for (int p = 0; p < bStat->parcelBundleVec[i].size(); p++) {
+                int h = bStat->parcelBundleVec[i][p];
+
+                for (int a = 0; a < bStat->vArcPlus[h][k].size(); a++){
+                    int u = bStat->vArcPlus[h][k][a].first;
+                    int v = bStat->vArcPlus[h][k][a].second;
+
+                    exp1 += x[u][v][k];
+
+                    // cout << "sequence " << k << ": ";
+
+                    // for (int a = 0; a < bStat->bundleVec[u].size(); a++) {
+                    //     cout << bStat->bundleVec[u][a] << " ";
+                    // }
+                    // cout << "- ";
+                    // for (int a = 0; a < bStat->bundleVec[v].size(); a++) {
+                    //     cout << bStat->bundleVec[v][a] << " ";
+                    // }
+                    // cout << endl;
+                }   
+            }
+
+            // cout << "NOW THE DELIVERY" << endl;
+
+            for (int p = 0; p < bStat->parcelBundleVec[i + inst->m].size(); p++) {
+                int h = bStat->parcelBundleVec[i + inst->m][p];
+
+                for (int a = 0; a < bStat->vArcPlus[h][k].size(); a++){
+                    int u = bStat->vArcPlus[h][k][a].first;
+                    int v = bStat->vArcPlus[h][k][a].second;  
+                            
+                    exp2 += x[u][v][k];
+                }
+            }
+
+			sprintf (var, "Constraint6_%d_%d", i, k);
+			IloRange cons = (exp1 - exp2 == 0);
+			cons.setName(var);
+			model.add(cons);			
+		}
+	}
+
+    for (int i = 0; i < setN; i++){
+
+        IloExpr exp(env);
+        IloExpr exp2(env);
+
+        for (int k = 0; k < inst->K; k++){
+            for (int a = 0; a < bStat->vArcPlus[i][k].size(); a++){
+                int u = bStat->vArcPlus[i][k][a].first;
+                int v = bStat->vArcPlus[i][k][a].second;
+
+                exp += x[u][v][k];
+            }
+        }
+
+        exp2 += y[i];
+        sprintf (var, "Constraint2_%d", i);
+        IloRange cons = (exp - exp2 == 0);
+        // IloRange cons = (exp == 1);
+        cons.setName(var);
+        model.add(cons);
+    }	
+
+    // //Constraint 7 - tie service begining to node visit
+
+    // for (int i = 0; i < bStat->bundleVec.size(); i++){
+    //     IloExpr exp(env);
+    //     exp = b[i] - M * y[i]; 
+    //     sprintf (var, "Constraint7_%d", i);
+    //     IloRange cons = (exp <= 0);
+    //     cons.setName(var);
+    //     model.add(cons);
+    // }
+
+    //Constraints 9 - TW 
+
+	for (int a = 0; a < bStat->bArcVec.size(); a++){
+		IloExpr exp(env);
+		IloExpr sumX(env);
+        int i = bStat->bArcVec[a].first;
+        int j = bStat->bArcVec[a].second;
+        int u = bStat->lastElement[i];
+        int v = bStat->firstElement[j];
+
+        for (int k1 = 0; k1 < bStat->arcV[i][j].size(); k1++){
+            int k = bStat->arcV[i][j][k1];
+            sumX += x[i][j][k];
+		}
+			double cvalue = mdist[u][v]/inst->vmed;
+			//cvalue = std::round(cvalue * multiplier) / multiplier;
+			//cvalue = timeRound(cvalue);
+			exp = b[i] - b[j] + bStat->bundleServVec[i] + (cvalue) - M * (1 - sumX);
+			sprintf (var, "Constraint9_%d_%d", i, j);
+			IloRange cons = (exp <= 0);
+			cons.setName(var);
+			model.add(cons);			
+	}
+
+	// Constraint 8 - service of pickup must come before the delivery
+
+	for (int i = 0; i < inst->m; i++){
+		IloExpr exp(env);
+        IloExpr exp2(env);
+
+        for (int a = 0; a < bStat->parcelBundleVec[i].size(); a++) {
+            int h = bStat->parcelBundleVec[i][a];
+            exp += b[h];
+        }
+
+        for (int a = 0; a < bStat->parcelBundleVec[i + inst->m].size(); a++) {
+            int h = bStat->parcelBundleVec[i + inst->m][a];
+            exp2 += b[h];
+        }
+
+		sprintf (var, "Constraint8_%d", i);
+		IloRange cons = (exp - exp2 <= 0);
+		cons.setName(var);
+		model.add(cons);
+	}
+
+    for (int i = 0; i < setP - inst->m; i++){
+		IloExpr exp(env);
+		exp = b[i];
+
+		sprintf (var, "Constraint11_%d", i);
+		IloRange cons1 = (exp - bStat->bundleStart[i]*y[i] <= 0);
+		cons1.setName(var);
+		model.add(cons1);
+		
+		sprintf (var, "Constraint12_%d", i);
+		IloRange cons2 = (0 <= exp - bStat->bundleStart[i]*y[i]);
+		cons2.setName(var);
+		model.add(cons2);			
+	}
+
+    for (int i = setP - inst->m; i < bStat->bundleVec.size(); i++){
+		IloExpr exp(env);
+		exp = b[i];
+
+		sprintf (var, "Constraint11_%d", i);
+		IloRange cons1 = (exp <= 19);
+		cons1.setName(var);
+		model.add(cons1);
+		
+		sprintf (var, "Constraint12_%d", i);
+		IloRange cons2 = (9 <= exp);
+		cons2.setName(var);
+		model.add(cons2);			
+	}
+
+    // //Constraints 10 - load constraints
+
+	for (int a = 0; a < bStat->bArcVec.size(); a++){
+		
+		IloExpr exp(env);
+		IloExpr exp2(env);
+		IloExpr sumX(env);
+        int i = bStat->bArcVec[a].first;
+        int j = bStat->bArcVec[a].second;
+
+        for (int k1 = 0; k1 < bStat->arcV[i][j].size(); k1++){
+            int k = bStat->arcV[i][j][k1];
+			sumX += x[i][j][k];
+		}
+
+        int hasPickup = 0;
+        int endLoad = 0;
+
+        for (int z = 0; z < bStat->bundleVec[j].size(); z++) {
+            int h = bStat->bundleVec[j][z];
+            endLoad += nodeVec[h].load;
+
+            if (h >= inst->n && h < inst->n + 2*inst->m) {
+                hasPickup = 1;
+            }
+
+            if (j == 89) {
+                cout << 89 << " " << endLoad << " " << hasPickup << endl; 
+            }
+
+            if (j == 34) {
+                cout << 34 << " " << endLoad << " " << hasPickup << endl; 
+            }
+        }
+        // if (j == 89 || j == 34) {
+        //     getchar();
+        // }
+
+		exp = w[i] + endLoad - W*(1 - sumX);
+		exp2 = w[j];
+		
+        sprintf (var, "Constraint13_%d_%d", i, j);
+		
+        IloRange cons1 = (exp2 - exp >= 0);
+		cons1.setName(var);
+		model.add(cons1);
+
+        sprintf (var, "Constraint14_%d_%d", i, j);
+		
+        // IloRange cons2 = (w[i] + hasPickup*sumX <= 1);
+		// cons1.setName(var);
+		// model.add(cons2);
+	}
+    getchar();
+
+	// //Constraints 9 - TW 
+
+	// for (int a = 0; a < nas->allArcs.size(); a++){
+	// 	IloExpr exp(env);
+	// 	IloExpr sumX(env);
+    //     int i = nas->allArcs[a].first;
+    //     int j = nas->allArcs[a].second;
+    //     for (int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
+    //         int k = nas->arcV[i][j][k1];
+    //         sumX += x[i][j][k];
+	// 	}
+	// 		double cvalue = mdist[i][j]/inst->vmed;
+	// 		//cvalue = std::round(cvalue * multiplier) / multiplier;
+	// 		//cvalue = timeRound(cvalue);
+	// 		exp = b[i] - b[j] + nodeVec[i].delta + (cvalue) - M * (1 - sumX);
+	// 		sprintf (var, "Constraint9_%d_%d", i, j);
+	// 		IloRange cons = (exp <= 0);
+	// 		cons.setName(var);
+	// 		model.add(cons);			
+
+	// }
 
     //Constraints 7 - maximum driving time
 
@@ -1381,61 +1717,61 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
     //         }
     //         getchar(); 
 
-     //Constraints 7  - calculating u
-    for (int k = 0; k < inst->K; k++){
-        IloExpr exp1(env);
-        IloExpr exp2(env);
-        int curDepot = fcDummy - inst->K + k;
-        // cout << k << endl;
-        exp1 = u[k];
-        for (int a = 0; a < bStat->vArcPlus[curDepot][k].size(); a++){
-            // cout << a << endl;
-            int u1 = bStat->vArcPlus[curDepot][k][a].first;
-            int v = bStat->vArcPlus[curDepot][k][a].second;
+    //  //Constraints 7  - calculating u
+    // for (int k = 0; k < inst->K; k++){
+    //     IloExpr exp1(env);
+    //     IloExpr exp2(env);
+    //     int curDepot = fcDummy - inst->K + k;
+    //     // cout << k << endl;
+    //     exp1 = u[k];
+    //     for (int a = 0; a < bStat->vArcPlus[curDepot][k].size(); a++){
+    //         // cout << a << endl;
+    //         int u1 = bStat->vArcPlus[curDepot][k][a].first;
+    //         int v = bStat->vArcPlus[curDepot][k][a].second;
 
-            int i1 = bStat->lastElement[u1];
-            int j1 = bStat->firstElement[v];
+    //         int i1 = bStat->lastElement[u1];
+    //         int j1 = bStat->firstElement[v];
 
-            exp2 += (bStat->bundleStart[v] - mdist[i1][j1]/inst->vmed)*x[u1][v][k];
-            // cout << u1 << " " << v << endl;
-        }
-        // cout << endl;
-        sprintf (var, "Constraint8_%d", k);
-        IloRange cons = (exp1 - exp2 == 0);
-        cons.setName(var);
-        model.add(cons);
-    }
+    //         exp2 += (bStat->bundleStart[v] - mdist[i1][j1]/inst->vmed)*x[u1][v][k];
+    //         // cout << u1 << " " << v << endl;
+    //     }
+    //     // cout << endl;
+    //     sprintf (var, "Constraint8_%d", k);
+    //     IloRange cons = (exp1 - exp2 == 0);
+    //     cons.setName(var);
+    //     model.add(cons);
+    // }
         
-    //Constraints 8  - calculating ûk
-    for (int k = 0; k < inst->K; k++){
-        IloExpr exp1(env);
-        IloExpr exp2(env);
-        int currDum = fcDummy + k;
-        exp1 = uf[k];
-        for (int a = 0; a < bStat->vArcMinus[currDum][k].size(); a++){
-            int u1 = bStat->vArcMinus[currDum][k][a].first;
-            int v = bStat->vArcMinus[currDum][k][a].second;
+    // //Constraints 8  - calculating ûk
+    // for (int k = 0; k < inst->K; k++){
+    //     IloExpr exp1(env);
+    //     IloExpr exp2(env);
+    //     int currDum = fcDummy + k;
+    //     exp1 = uf[k];
+    //     for (int a = 0; a < bStat->vArcMinus[currDum][k].size(); a++){
+    //         int u1 = bStat->vArcMinus[currDum][k][a].first;
+    //         int v = bStat->vArcMinus[currDum][k][a].second;
 
-            exp2 += (bStat->bundleEnd[u1])*x[u1][v][k];
-        }
-        sprintf (var, "Constraint9_%d", k);
-        IloRange cons = (exp1 - exp2 == 0);
-        cons.setName(var);
-        model.add(cons);
-    }
+    //         exp2 += (bStat->bundleEnd[u1])*x[u1][v][k];
+    //     }
+    //     sprintf (var, "Constraint9_%d", k);
+    //     IloRange cons = (exp1 - exp2 == 0);
+    //     cons.setName(var);
+    //     model.add(cons);
+    // }
             
-    //Constraints 9 - max driving time
+    // //Constraints 9 - max driving time
 
-    for (int k = 0; k < inst->K; k++){
-        IloExpr exp(env);
+    // for (int k = 0; k < inst->K; k++){
+    //     IloExpr exp(env);
 
-        exp = uf[k] - u[k];
+    //     exp = uf[k] - u[k];
 
-        sprintf (var, "Constraint10_%d", k);
-        IloRange cons1 = (exp <= inst->maxTime); 
-        cons1.setName(var);
-        model.add(cons1);
-    }
+    //     sprintf (var, "Constraint10_%d", k);
+    //     IloRange cons1 = (exp <= inst->maxTime); 
+    //     cons1.setName(var);
+    //     model.add(cons1);
+    // }
 
 
  //*******************************
@@ -1601,6 +1937,35 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 							auxPair.first = i;
 							auxPair.second = j;
 							sStat->solvec[k].push_back(auxPair);
+
+                            cout << "sequence " << k << ": ";
+
+                            for (int a = 0; a < bStat->bundleVec[i].size(); a++) {
+                                cout << bStat->bundleVec[i][a] << " ";
+                            }
+                            cout << "- ";
+                            for (int a = 0; a < bStat->bundleVec[j].size(); a++) {
+                                cout << bStat->bundleVec[j][a] << " ";
+                            }
+                            cout << endl;
+
+                            cout << "capacity = " << bSARP.getValue(w[i]) << " vs " << bSARP.getValue(w[j]) << endl;
+
+							// cout << i << " " << j << " " << k << ": " << bSARP.getValue(x[i][j][k]) << endl;
+							// getchar();
+						}
+					}
+				}
+			}	
+		}
+
+        for (int i = 0; i < bStat->bundleVec.size(); i++){
+			for(int j = 0; j < bStat->bundleVec.size(); ++j){
+				if (bStat->bArcs[i][j] == true){
+                    for (int k1 = 0; k1 < bStat->arcV[i][j].size(); k1++){
+                        int k = bStat->arcV[i][j][k1];
+						if (bSARP.getValue(x[i][j][k]) > 0.5){
+
 							cout << i << " " << j << " " << k << ": " << bSARP.getValue(x[i][j][k]) << endl;
 							// getchar();
 						}
@@ -1614,6 +1979,12 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 				// cout << "x(" << sStat->solvec[k][i].first << ", " << sStat->solvec[k][i].second << ", " << k << ")" << endl;
 			}
 		}		
+
+        for (int i = 0; i < bStat->bundleVec.size(); i++) {
+            if (bSARP.getValue(b[i]) >= 9) {
+                cout << "b[" << i << "] = " << bSARP.getValue(b[i]) << endl;
+            }
+        }
     }
     
 	env.end();
