@@ -1,4 +1,5 @@
 #include "mipbundle.h"
+#include "MyLazyCallback.h"
 #include <cstdlib>
 #include <stdio.h>
 
@@ -1128,7 +1129,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
         }
         cout << endl;
     }
-    getchar();
+    // getchar\(\);
 	
 	IloExpr objFunction(env);
 
@@ -1411,7 +1412,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 			model.add(cons);			
 		}
 	}
-    getchar();
+    // getchar\(\);
 
     for (int i = 0; i < inst->m; i++){
 		for (int k = 0; k < inst->K; k++){
@@ -1622,7 +1623,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 		// cons1.setName(var);
 		// model.add(cons2);
 	}
-    getchar();
+    // getchar\(\);
 
 	// //Constraints 9 - TW 
 
@@ -1877,6 +1878,9 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 
     bSARP.setParam(IloCplex::Param::TimeLimit, 7200);
     // bSARP.setParam(IloCplex::Param::TimeLimit, 10);
+
+    MyLazyCallback* lazyCbk = new (env) MyLazyCallback(env, x, bStat, mdist, inst, problem, nodeVec, (int)nodeVec.size(), (int)inst->K, (int)inst->m, (int)inst->n);
+    bSARP.use(lazyCbk);
 
     IloNum start;
     IloNum time;
