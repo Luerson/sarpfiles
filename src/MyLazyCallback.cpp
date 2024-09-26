@@ -8,18 +8,34 @@ MyLazyCallback::MyLazyCallback(IloEnv env, const IloArray <IloArray <IloBoolVarA
 {
 	int num = 0;
 	/********** Filling x_vars **********/
-	for(int i = 0; i < n; i++) {
-		for(int j = 0; j < n; j++){
+	// for(int i = 0; i < n; i++) {
+	// 	for(int j = 0; j < n; j++){
+	// 		if (!bStat->bArcs[i][j]) {
+	// 			continue;
+	// 		}
+	// 		for (int k1 = 0; k1 < bStat->arcV[i][j].size(); k1++) {
+	// 			int k = bStat->arcV[i][j][k1];
+	// 			x_vars.add(x[i][j][k]);
+	// 		}
+	// 	}
+	// }
+	// /************************************/
+
+	for (int i = 0; i < bStat->bundleVec.size(); i++) {
+        for (int j = 0; j < bStat->bundleVec.size(); j++) {
 			if (!bStat->bArcs[i][j]) {
+				// cout << i << " " << j << endl;
 				continue;
 			}
-			for (int k1 = 0; k1 < bStat->arcV[i][j].size(); k1++) {
+			
+			for (int k1 = 0; k1 < bStat->arcV[i][j].size(); k1++)
+			{
 				int k = bStat->arcV[i][j][k1];
+				// cout << i << " " << j << " " << k << endl;
 				x_vars.add(x[i][j][k]);
 			}
-		}
-	}
-	/************************************/
+        }
+    }
 
 	// int V = nCustomers + 2*nParcels + v;
 
@@ -59,7 +75,7 @@ IloCplex::CallbackI* MyLazyCallback::duplicateCallback() const
 /************************************ Callback's code that is runned by CPLEX ************************************/
 void MyLazyCallback::main()
 {	
-	cout << "LAZY CALLBACK" << endl;
+	// cout << "LAZY CALLBACK" << endl;
 
 	IloNumArray x_vals(getEnv());
     getValues(x_vals, x_vars);
@@ -70,34 +86,42 @@ void MyLazyCallback::main()
 	// 4: d - C;
 	const int bundlesPerCustomer = 1 + 3*this->nParcels;
 
+	int relevantNodes = bStat->bundleVec.size() - (2*inst->K + inst->m); 
 
 	// Matrix to store every route in the current solution
 	vector<vector<int>> routes;
 	map<int, int> arcDirection;
 	map<pair<int, int>, int> arcChosen;
+	vector<bool> used(bStat->bundleVec.size(), false);
+	vector<vector<int>> subtours;
 
     // Imprimir os valores das variáveis relaxadas
     int firstIndex 	= 0;
 	int lastIndex 	= bundlesPerCustomer*this->nCustomers + this->nParcels + 2*this->v - 1;
+	int l = -1;
 
-    for (int i = firstIndex; i <= lastIndex; i++) {
-        for (int j = firstIndex; j <= lastIndex; j++) {
+    for (int i = 0; i < bStat->bundleVec.size(); i++) {
+        for (int j = 0; j < bStat->bundleVec.size(); j++) {
+			// cout << i << " " << j << endl;
 			if (!bStat->bArcs[i][j]) {
 				// cout << i << " " << j << endl;
 				continue;
 			}
-			
+
+			// cout << i << " " << j << endl;
 			for (int k1 = 0; k1 < bStat->arcV[i][j].size(); k1++)
 			{
 				int k = bStat->arcV[i][j][k1];
 
 				// cout << "x: " << getValue(x[i][j][k]) << endl;
-				if (getValue(x[i][j][k]) > EPSILON)
+				if (x_vals[l++] > EPSILON)
 				{
+					cout << i << " " << j << " " << k << endl;
 					arcDirection[i] = j;
 					break;
 				}
 			}
+			// cout << endl;
 
 			// pair<int, int> myPair = make_pair(i, j);
 
@@ -116,6 +140,7 @@ void MyLazyCallback::main()
 			// }
         }
     }
+	getchar();
 
     // Liberar a memória
     x_vals.end();
@@ -142,6 +167,8 @@ void MyLazyCallback::main()
 		routes.emplace_back(); // Creating a new route
 
 		routes[i].push_back(startDepotIndex);
+		used[startDepotIndex] = true;
+
 		if (arcDirection.find(startDepotIndex) != arcDirection.end())
 		{
 			int prevNode = startDepotIndex;
@@ -152,24 +179,299 @@ void MyLazyCallback::main()
 
 				routes[i].push_back(nextNode);
 				prevNode = nextNode;
+				used[nextNode] = true;
 			}
 		}
 		routes[i].push_back(finalDepotIndex);
+		used[finalDepotIndex] = true;
 	}
+	// for (int k = 0; k < routes.size(); k++) {
+	// 	for (int i = 0; i < routes[k].size(); i++) {
+	// 		cerr << routes[k][i] << " ";
+	// 	}
+	// 	cerr << endl;
+	// }
+	
+	for (int i = 0; i < bStat->bundleVec.size(); i++)
+	{
+		if (!used[i] && arcDirection.find(i) != arcDirection.end()) {
+			int firstElement = i;
+			int aux = arcDirection[firstElement];
+			vector<int> subtour;
+
+			used[i] = true;
+			subtour.push_back(i);
+
+			while (aux != firstElement) {
+				used[aux] = true;
+				subtour.push_back(aux);
+				aux = arcDirection[aux];
+			}
+
+			subtours.push_back(subtour);
+		}
+	}
+
+	cout << "depois" << endl;
+
+	// for (int k = 0; k < subtours.size(); k++) {
+	// 	for (int i = 0; i < subtours[k].size(); i++) {
+	// 		cout << subtours[k][i] << " ";
+	// 	}
+	// 	cout << endl;
+	// }
+	// cout << "aqui 1" << endl;
+	// getchar();
 	// cout << "FIM ROTAS" << endl;
 
 	/********** Printing the routes **********/
-	cout << endl;
-	for (int i = 0; i < routes.size(); i++)
-	{
-		 cout << "Route " << i << ": ";
-		for (int j = 0; j < routes[i].size()-1; j++)
-		{
-			 cout << routes[i][j] << " -> ";
+	// cout << endl;
+	// for (int i = 0; i < routes.size(); i++)
+	// {
+	// 	 cout << "Route " << i << ": ";
+	// 	for (int j = 0; j < routes[i].size()-1; j++)
+	// 	{
+	// 		 cout << routes[i][j] << " -> ";
+	// 	}
+	// 	 cout << routes[i].back() << endl;
+	// }
+
+	vector<bool> pickupBundles(bStat->bundleVec.size(), false);
+	vector<bool> deliveryBundles(bStat->bundleVec.size(), false);
+	vector<bool> fullParcelBundle(bStat->bundleVec.size(), false);
+	vector<vector<int>> ToPrevent;
+
+	for (int k = 0; k < routes.size(); k++) {
+		for (int i = 0; i < routes[k].size(); i++) {
+			int h = routes[k][i];
+
+			int u = bStat->bundleVec[h][0];
+			int v = bStat->bundleVec[h][1];
+
+			if (bStat->bundleVec[h].size() == 2) {
+				// cout << u << " " << v << endl;
+				// getchar();
+
+				if (u < inst->n && v >= inst->n + inst->m && v < inst->n + 2*inst->m) {
+					deliveryBundles[h] = true;
+				}
+				
+				else
+
+				if (v < inst->n && u >= inst->n && u < inst->n + inst->m) {
+					pickupBundles[h] = true;
+				}
+
+				else
+
+				{
+					fullParcelBundle[h] = true;
+				}
+			} else {
+				if (u >= inst->n && u < inst->n + inst->m) {
+					fullParcelBundle[h] = true;
+				}
+			}
 		}
-		 cout << routes[i].back() << endl;
 	}
-	getchar();
+
+	for (int k = 0; k < routes.size(); k++) {
+		vector<int> sequence;
+		bool restricted = false;
+
+		for (int i = 0; i < routes[k].size(); i++) {
+			int h = routes[k][i];
+
+			if (deliveryBundles[h]) {
+				restricted = false;
+				sequence.clear();
+			} else if ((pickupBundles[h] || fullParcelBundle[h]) && restricted) {
+				sequence.push_back(h);
+				ToPrevent.push_back(sequence);
+				sequence.clear();
+				restricted = false;
+				i--;
+			} else if (pickupBundles[h] == true && !restricted){
+				sequence.push_back(h);
+				restricted = true;
+			} else if (restricted) {
+				sequence.push_back(h);
+			}
+		}
+	}
+
+	for (int k = 0; k < routes.size(); k++) {
+		vector<int> sequence;
+		int lastRelevant = routes[k][0];
+		float time = 0;
+
+		sequence.push_back(lastRelevant);
+
+		for (int i = 1; i < routes[k].size(); i++) {
+			int u = routes[k][i-1];
+			int v = routes[k][i];
+
+			int z1 = bStat->lastElement[u];
+			int z2 = bStat->firstElement[v];
+
+			bool isRelevant = ((i == routes[k].size() - 1) || (v < relevantNodes));
+
+			sequence.push_back(v);
+
+			time += mdist[z1][z2]/inst->vmed;
+
+			if (isRelevant) {
+
+				float timeStart = (bStat->bundleStart[lastRelevant] > 9 ? bStat->bundleEnd[lastRelevant] : 9);
+				float timeEnd = (bStat->bundleStart[v] > 9 ? bStat->bundleStart[v] : 19);
+
+				if (time > timeEnd - timeStart) {
+					ToPrevent.push_back(sequence);
+
+					// if (ToPrevent.back()[0] == 64 && ToPrevent.back().back() == 48) {
+					// 	cout << timeEnd << " " << timeStart << endl;
+					// 	double testTime = 0;
+
+					// 	for (int i1 = 0; i1 < (int)ToPrevent.back().size() - 1; i1++) {
+					// 		for (int j1 = 0; j1 < bStat->bundleVec[ToPrevent.back()[i1]].size() - 1; j1++) {
+					// 			int element = bStat->bundleVec[ToPrevent.back()[i1]][j1];
+					// 			// int element2 = bStat->bundleVec[ToPrevent.back()[i1]][j1 + 1];
+					// 			cout << element << " ";
+					// 			// testTime += nodeVec[element].delta + mdist[element][element2];
+					// 		}
+					// 		int u = bStat->lastElement[ToPrevent.back()[i1]];
+					// 		int v = bStat->firstElement[ToPrevent.back()[i1 + 1]];
+
+					// 		testTime += bStat->bundleServVec[ToPrevent.back()[i1]] + mdist[u][v];
+					// 	}
+
+					// 	cout << "total time = " << testTime << endl;
+					// 	getchar();
+					// }
+				}
+
+				// cout << lastRelevant << " " << bStat->bundleEnd[lastRelevant] << " vs " << v << " " << bStat->bundleStart[v] << " = " << timeEnd - timeStart << endl;
+				// getchar();
+				
+				// for (int z = 0; !ToPrevent.empty() && z < ToPrevent.back().size() - 1; z++) {
+				// 	// for (int j1 = 0; j1 < bStat->bundleVec[ToPrevent.back()[i1]].size() - 1; j1++) {
+				// 	// 	int element = bStat->bundleVec[ToPrevent.back()[i1]][j1];
+				// 	// 	// int element2 = bStat->bundleVec[ToPrevent.back()[i1]][j1 + 1];
+				// 	// 	cout << element << " ";
+				// 	// 	// testTime += nodeVec[element].delta + mdist[element][element2];
+				// 	// }
+				// 	// int u = bStat->lastElement[ToPrevent.back()[i1]];
+				// 	// int v = bStat->firstElement[ToPrevent.back()[i1 + 1]];
+
+				// 	// testTime += bStat->bundleServVec[ToPrevent.back()[i1]] + mdist[u][v];
+				// 	cout << z << " ";
+				// 	getchar();
+				// }
+				// cout << endl;
+
+				sequence.clear();
+				time = 0;
+				sequence.push_back(v);
+				lastRelevant = v;
+			} else {
+				time += bStat->bundleServVec[v];
+			}
+		}
+	}
+
+	// for (int k = 0; k < ToPrevent.size(); k++) {
+
+	// 	for (int i = 0; i < ToPrevent[k].size() - 1; i++) {
+	// 		int u = ToPrevent[k][i];
+	// 		int v = ToPrevent[k][i+1];
+	// 		int h = u;
+
+	// 		for (int j = 0; j < bStat->bundleVec[h].size(); j++) {
+	// 			cout << bStat->bundleVec[h][j] << " ";
+	// 		}
+	// 	}
+	// 	cout << endl;
+	// }
+	// cout << "aqui" << endl;
+	// getchar();
+
+	// cout << "RESTRICTED" << endl;
+
+	// for (int k = 0; k < routes.size(); k++) {
+	// 	for (int i = 0; i < routes[k].size(); i++) {
+	// 		int h = routes[k][i];
+
+	// 		for (int j = 0; j < bStat->bundleVec[h].size(); j++) {
+	// 			cout << bStat->bundleVec[h][j] << " ";
+	// 		}
+	// 	}
+	// 	cout << endl;
+	// }
+
+	// cout << "FIM ROTAS" << endl;
+
+	bool lazyCut = false;
+
+	for (int k = 0; k < ToPrevent.size(); k++) {
+		IloExpr expr(getEnv());
+
+		for (int i = 0; i < ToPrevent[k].size() - 1; i++) {
+			int u = ToPrevent[k][i];
+			int v = ToPrevent[k][i+1];
+			int h = u;
+
+			for (int k1 = 0; k1 < bStat->arcV[u][v].size(); k1++) {
+				int k2 = bStat->arcV[u][v][k1];
+
+				expr += x[u][v][k2];
+			}
+
+			// for (int j = 0; j < bStat->bundleVec[h].size(); j++) {
+			// 	cout << bStat->bundleVec[h][j] << " ";
+			// }
+		}
+		// for (int j = 0; j < ToPrevent.back().size(); j++) {
+		// 	cout << bStat->bundleVec.back()[j] << " ";
+		// }
+		// cout << endl;
+		// getchar();
+
+		lazyCut = true;
+
+		add(expr <= (int)ToPrevent[k].size() - 2);
+	}
+
+	for (int k = 0; k < subtours.size(); k++) {
+		IloExpr expr(getEnv());
+
+		for (int i = 0; i < subtours[k].size(); i++) {
+			for (int j = 0; j < subtours[k].size(); j++) {
+				
+				int u  = subtours[k][i];
+				int v = subtours[k][j];
+				
+				for (int k1 = 0; k1 < bStat->arcV[u][v].size(); k1++) {
+					int k2 = bStat->arcV[u][v][k1];
+
+					expr += x[u][v][k2];
+				}
+			}
+
+			// for (int j = 0; j < bStat->bundleVec[h].size(); j++) {
+			// 	cout << bStat->bundleVec[h][j] << " ";
+			// }
+		}
+		// cout << endl;
+		lazyCut = true;
+
+		add(expr <= (int)subtours[k].size() - 1);
+	}
+
+	if (lazyCut) {
+		cout << "LAZYCUT" << endl;
+	}
+
+	/********** Searching for infeasibility **********/
 }
 /*****************************************************************************************************************/
 

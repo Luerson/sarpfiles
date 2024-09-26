@@ -52,6 +52,7 @@ struct bundleStat{
     vector<int> clofbundle;
 	vector<int> vecofPass;
 	vector<bool> eligibleBundleVec;
+	vector<vector<bool>> eligibleBundleVecV;
 	vector< vector<int> > vecofPU;
 	vector< vector<int> > vecofDL;
 	vector< vector<int> > cBundles;

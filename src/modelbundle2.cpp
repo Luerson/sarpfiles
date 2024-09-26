@@ -147,7 +147,7 @@ void bundleProfit2(instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec
                 cost += nodeVec[bStat->bundleVec[i][j]].profit;
                 cost += - (inst->costkm*mdist[bStat->bundleVec[i][j]][bStat->bundleVec[i][j + 1]]);
                 service += nodeVec[bStat->bundleVec[i][j]].delta + (mdist[bStat->bundleVec[i][j]][bStat->bundleVec[i][j + 1]]/inst->vmed);
-            }           
+            }
         }
         cost += nodeVec[bStat->bundleVec[i][bStat->bundleVec[i].size() - 1]].profit;
         service += nodeVec[bStat->bundleVec[i][bStat->bundleVec[i].size() - 1]].delta;
@@ -164,6 +164,8 @@ void selectEligibleBundles(instanceStat *inst, double **mdist, vector<nodeStat> 
     int clusterSize = 1 + 3*inst->m;
     int nClusters = inst->n;
     int nBundles = bStat->bundleVec.size();
+    int parcelStart = nBundles - 2*inst->K - inst->m;
+    int depotStart = parcelStart + inst->m;
 
     int nRemoved = 0;
     vector<int> RemovedByTime;
@@ -171,24 +173,55 @@ void selectEligibleBundles(instanceStat *inst, double **mdist, vector<nodeStat> 
 
     bStat->eligibleBundleVec.clear();
     bStat->eligibleBundleVec.resize(nBundles);
+    bStat->eligibleBundleVecV.resize(nBundles);
 
-    // Removing bundles unfeasible to any route
-    for (int i = 0; i < bStat->bundleVec.size(); i++) {
+    // Removing customer bundles unfeasible to any route
+    for (int i = 0; i < parcelStart; i++) {
+        bStat->eligibleBundleVecV[i].resize(inst->K);
+        bStat->eligibleBundleVec[i] = false;
+
         int u = bStat->firstElement[i];
 
-        // for (int k = 0; k < inst->K; k++) {
-        //     int sDepot = bStat->firstElement[nBundles - 2*inst->K + k];
+        for (int k = 0; k < inst->K; k++) {
+            bStat->eligibleBundleVecV[i][k] = false;
+            
+            int sDepot = bStat->firstElement[nBundles - 2*inst->K + k];
 
-        //     double earliestArrv = bStat->bundleStart[nBundles - 2*inst->K + k] + mdist[sDepot][u]/inst->vmed;
-        //     double latestEnd = bStat->bundleEnd[i];
+            double earliestArrv = bStat->bundleStart[nBundles - 2*inst->K + k] + mdist[sDepot][u]/inst->vmed;
+            double latestEnd = bStat->bundleEnd[i];
 
-        //     if (earliestArrv <= bStat->bundleStart[i] && bStat->bundleEnd[i] <= inst->T) {
+            if (earliestArrv <= bStat->bundleStart[i] && bStat->bundleEnd[i] <= inst->T) {
                 bStat->eligibleBundleVec[i] = true;
-        //     }
-        // }
+                bStat->eligibleBundleVecV[i][k] = true;
+            }
+        }
 
         if (bStat->eligibleBundleVec[i] == false) {
             RemovedByTime.push_back(i);
+        }
+    }
+
+    // Parcel bundles are allowed in any route
+    for (int i = parcelStart; i < depotStart; i++) {
+        bStat->eligibleBundleVecV[i].resize(inst->K);
+        bStat->eligibleBundleVec[i] = true;
+
+        for (int k = 0; k < inst->K; k++) {
+            bStat->eligibleBundleVecV[i][k] = true;
+        }
+    }
+
+    // Depot bundles are allowed only in it's route
+    for (int i = depotStart; i < nBundles; i++) {
+        bStat->eligibleBundleVecV[i].resize(inst->K);
+        bStat->eligibleBundleVec[i] = true;
+
+        for (int k = 0; k < inst->K; k++) {
+            if (k == i - depotStart || k == i - depotStart - inst->K) {
+                bStat->eligibleBundleVecV[i][k] = true;
+            } else {
+                bStat->eligibleBundleVecV[i][k] = false;
+            }
         }
     }
 
@@ -227,153 +260,153 @@ void selectEligibleBundles(instanceStat *inst, double **mdist, vector<nodeStat> 
     
     // // selecting bundles by priority
     // else 
-    if (problem->model == "bundle6") {
-        // Para encontrar os bundles associados a um customer, faça o seguinte:
-        // - para n customers e m parcels, os bundles associados ao bundle i < n são 
-        //   indexados de [a -- z], onde 'a = i * (3*m + 1)' e 'z = (i+1)*(3*m + 1) - 1';
-        // - os bundles associados a uma parcel i < m podem ser encontrados em bStat->parcelBundleVec[i];
+    // if (problem->model == "bundle6") {
+    //     // Para encontrar os bundles associados a um customer, faça o seguinte:
+    //     // - para n customers e m parcels, os bundles associados ao bundle i < n são 
+    //     //   indexados de [a -- z], onde 'a = i * (3*m + 1)' e 'z = (i+1)*(3*m + 1) - 1';
+    //     // - os bundles associados a uma parcel i < m podem ser encontrados em bStat->parcelBundleVec[i];
 
-        // 1 - criar matriz de prioridades
+    //     // 1 - criar matriz de prioridades
 
-        int cur, prev, count;
-        cur = 0;
-        prev = -1;
+    //     int cur, prev, count;
+    //     cur = 0;
+    //     prev = -1;
 
-        count = 0;
+    //     count = 0;
 
-        // while (cur != prev) {
-            vector<bool> priority(bStat->bundleVec.size(), false);
-            // cout << cur << " " << prev << endl;
-            // prev = cur;
-            cur = 0;
-            // cout << "Customer" << endl;
-            // 2 - para cada customer, calcular a média dos profits de todos os seus bundles e marcar como prioritários os bundles acima da média
-            for (int i = 0; i < inst->n; i++) {
-                double media = 0;
-                int qtd = 0;
+    //     // while (cur != prev) {
+    //         vector<bool> priority(bStat->bundleVec.size(), false);
+    //         // cout << cur << " " << prev << endl;
+    //         // prev = cur;
+    //         cur = 0;
+    //         // cout << "Customer" << endl;
+    //         // 2 - para cada customer, calcular a média dos profits de todos os seus bundles e marcar como prioritários os bundles acima da média
+    //         for (int i = 0; i < inst->n; i++) {
+    //             double media = 0;
+    //             int qtd = 0;
 
-                for (int a = i * (3*inst->m + 1) + 1; a < (i+1)*(3*inst->m + 1); a++) {
-                    if (bStat->eligibleBundleVec[a])
-                    {
-                        media += bStat->bundleProfVec[a];
-                        qtd++;
-                    }
-                }
+    //             for (int a = i * (3*inst->m + 1) + 1; a < (i+1)*(3*inst->m + 1); a++) {
+    //                 if (bStat->eligibleBundleVec[a])
+    //                 {
+    //                     media += bStat->bundleProfVec[a];
+    //                     qtd++;
+    //                 }
+    //             }
 
-                media /= qtd;
+    //             media /= qtd;
 
-                for (int a = i * (3*inst->m + 1) + 1; a < (i+1)*(3*inst->m + 1); a++) {
-                    if (bStat->bundleProfVec[a] >= media && bStat->eligibleBundleVec[a]) {
-                        priority[a] = true;
-                        cur++;
-                    }
+    //             for (int a = i * (3*inst->m + 1) + 1; a < (i+1)*(3*inst->m + 1); a++) {
+    //                 if (bStat->bundleProfVec[a] >= media && bStat->eligibleBundleVec[a]) {
+    //                     priority[a] = true;
+    //                     cur++;
+    //                 }
 
-                    // if (bStat->eligibleBundleVec[a] && !priority[a])
-                    // {
-                    //     cout << endl;
-                    //     cout << "Removed bundle: " << a << endl;
-                    //     cout << "Type: Customer" << endl;
-                    //     cout << "Profit: " << bStat->bundleProfVec[a] << endl;
-                    //     cout << "Serve: " << bStat->bundleServVec[a] << endl;
-                    //     cout << endl;
-                    // } else if (priority[a]) {
-                    //     cout << endl;
-                    //     cout << "selected bundle: " << a << endl;
-                    //     cout << "Type: Customer" << endl;
-                    //     cout << "Profit: " << bStat->bundleProfVec[a] << endl;
-                    //     cout << "Serve: " << bStat->bundleServVec[a] << endl;
-                    //     cout << endl;
-                    // }
-                }
-            }
+    //                 // if (bStat->eligibleBundleVec[a] && !priority[a])
+    //                 // {
+    //                 //     cout << endl;
+    //                 //     cout << "Removed bundle: " << a << endl;
+    //                 //     cout << "Type: Customer" << endl;
+    //                 //     cout << "Profit: " << bStat->bundleProfVec[a] << endl;
+    //                 //     cout << "Serve: " << bStat->bundleServVec[a] << endl;
+    //                 //     cout << endl;
+    //                 // } else if (priority[a]) {
+    //                 //     cout << endl;
+    //                 //     cout << "selected bundle: " << a << endl;
+    //                 //     cout << "Type: Customer" << endl;
+    //                 //     cout << "Profit: " << bStat->bundleProfVec[a] << endl;
+    //                 //     cout << "Serve: " << bStat->bundleServVec[a] << endl;
+    //                 //     cout << endl;
+    //                 // }
+    //             }
+    //         }
 
-            // cout << "Parcel" << endl;
-            // 3 - para cada parcel, calcular a distância média percorrida nos bundles (tirando a distância interna do customer) e marcar como
-            // prioritários os bundles cuja distância percorrida é menor do que a média (por hora usar o tempo de viagem em bStat->bundleServVec
-            // como referência, mas tem que descobrir onde tá armazenada a informação da distância)
-            for (int i = 0; i < inst->m; i++)
-            {
-                double media = 0;
-                int qtd = 0;
+    //         // cout << "Parcel" << endl;
+    //         // 3 - para cada parcel, calcular a distância média percorrida nos bundles (tirando a distância interna do customer) e marcar como
+    //         // prioritários os bundles cuja distância percorrida é menor do que a média (por hora usar o tempo de viagem em bStat->bundleServVec
+    //         // como referência, mas tem que descobrir onde tá armazenada a informação da distância)
+    //         for (int i = 0; i < inst->m; i++)
+    //         {
+    //             double media = 0;
+    //             int qtd = 0;
 
-                for (int a = 0; a < bStat->parcelBundleVec[i].size(); a++)
-                {
-                    int bundleIdx = bStat->parcelBundleVec[i][a];
+    //             for (int a = 0; a < bStat->parcelBundleVec[i].size(); a++)
+    //             {
+    //                 int bundleIdx = bStat->parcelBundleVec[i][a];
 
-                    if (bStat->eligibleBundleVec[ bundleIdx ])
-                    {
-                        int customerIdx = min(
-                            bStat->bundleVec[bundleIdx][0], 
-                            min(bStat->bundleVec[bundleIdx][1], bStat->bundleVec[bundleIdx][2])
-                        );
+    //                 if (bStat->eligibleBundleVec[ bundleIdx ])
+    //                 {
+    //                     int customerIdx = min(
+    //                         bStat->bundleVec[bundleIdx][0], 
+    //                         min(bStat->bundleVec[bundleIdx][1], bStat->bundleVec[bundleIdx][2])
+    //                     );
 
-                        media += bStat->bundleServVec[ bundleIdx ] - nodeVec[customerIdx].delta;
-                        qtd++;
-                    }
-                }
+    //                     media += bStat->bundleServVec[ bundleIdx ] - nodeVec[customerIdx].delta;
+    //                     qtd++;
+    //                 }
+    //             }
 
-                media /= qtd;
+    //             media /= qtd;
 
-                for (int a = 0; a < bStat->parcelBundleVec[i].size(); a++)
-                {
-                    int bundleIdx = bStat->parcelBundleVec[i][a];
-                    int customerIdx = min(
-                            bStat->bundleVec[bundleIdx][0], 
-                            min(bStat->bundleVec[bundleIdx][1], bStat->bundleVec[bundleIdx][2])
-                        );
+    //             for (int a = 0; a < bStat->parcelBundleVec[i].size(); a++)
+    //             {
+    //                 int bundleIdx = bStat->parcelBundleVec[i][a];
+    //                 int customerIdx = min(
+    //                         bStat->bundleVec[bundleIdx][0], 
+    //                         min(bStat->bundleVec[bundleIdx][1], bStat->bundleVec[bundleIdx][2])
+    //                     );
 
-                    if (bStat->bundleServVec[ bundleIdx ] - nodeVec[customerIdx].delta <= media && bStat->eligibleBundleVec[ bundleIdx ])
-                    {
-                        priority[ bundleIdx ] = true;
-                        cur++;
-                    }
+    //                 if (bStat->bundleServVec[ bundleIdx ] - nodeVec[customerIdx].delta <= media && bStat->eligibleBundleVec[ bundleIdx ])
+    //                 {
+    //                     priority[ bundleIdx ] = true;
+    //                     cur++;
+    //                 }
         
-                    // if (bStat->eligibleBundleVec[bundleIdx] && bStat->bundleServVec[ bundleIdx ] > media && !priority[bundleIdx])
-                    // {
-                    //     cout << endl;
-                    //     cout << "Removed bundle: " << bundleIdx << endl;
-                    //     cout << "Type: Parcel" << endl;
-                    //     cout << "Profit: " << bStat->bundleProfVec[ bundleIdx ] << endl;
-                    //     cout << "Serve: " << bStat->bundleServVec[ bundleIdx ] - nodeVec[customerIdx].delta << endl;
-                    //     cout << endl;
-                    // } else if (priority[bundleIdx]) {
-                    //     cout << endl;
-                    //     cout << "selected bundle: " << bundleIdx << endl;
-                    //     cout << "Type: Parcel" << endl;
-                    //     cout << "Profit: " << bStat->bundleProfVec[ bundleIdx ] << endl;
-                    //     cout << "Serve: " << bStat->bundleServVec[ bundleIdx ] - nodeVec[customerIdx].delta << endl;
-                    //     cout << endl;
-                    // }
-                }
-            }
+    //                 // if (bStat->eligibleBundleVec[bundleIdx] && bStat->bundleServVec[ bundleIdx ] > media && !priority[bundleIdx])
+    //                 // {
+    //                 //     cout << endl;
+    //                 //     cout << "Removed bundle: " << bundleIdx << endl;
+    //                 //     cout << "Type: Parcel" << endl;
+    //                 //     cout << "Profit: " << bStat->bundleProfVec[ bundleIdx ] << endl;
+    //                 //     cout << "Serve: " << bStat->bundleServVec[ bundleIdx ] - nodeVec[customerIdx].delta << endl;
+    //                 //     cout << endl;
+    //                 // } else if (priority[bundleIdx]) {
+    //                 //     cout << endl;
+    //                 //     cout << "selected bundle: " << bundleIdx << endl;
+    //                 //     cout << "Type: Parcel" << endl;
+    //                 //     cout << "Profit: " << bStat->bundleProfVec[ bundleIdx ] << endl;
+    //                 //     cout << "Serve: " << bStat->bundleServVec[ bundleIdx ] - nodeVec[customerIdx].delta << endl;
+    //                 //     cout << endl;
+    //                 // }
+    //             }
+    //         }
 
-            // 4 - remover da eligibilidade os bundles que não sáo prioritários para nenhum dos critérios
-            for (int i = 0; i < bStat->bundleVec.size() - 2*inst->K; i++) {
-                // cout << "1 aqui" << endl;
+    //         // 4 - remover da eligibilidade os bundles que não sáo prioritários para nenhum dos critérios
+    //         for (int i = 0; i < bStat->bundleVec.size() - 2*inst->K; i++) {
+    //             // cout << "1 aqui" << endl;
 
-                // if (bStat->eligibleBundleVec[i])
-                // {
-                //     bStat->eligibleBundleVec[i] = (bStat->eligibleBundleVec[i] & priority[i]);
-                //     if (!bStat->eligibleBundleVec[i])
-                //     {
-                //         cout << endl;
-                //         cout << "Removed bundle: " << i << endl;
-                //         cout << "Profit: " << bStat->bundleProfVec[i] << endl;
-                //         cout << "Serve: " << bStat->bundleServVec[i] << endl;
-                //         cout << endl;
-                //     }
-                // }
-                bStat->eligibleBundleVec[i] = (bStat->eligibleBundleVec[i] & priority[i]);
-            }
-        // }
+    //             // if (bStat->eligibleBundleVec[i])
+    //             // {
+    //             //     bStat->eligibleBundleVec[i] = (bStat->eligibleBundleVec[i] & priority[i]);
+    //             //     if (!bStat->eligibleBundleVec[i])
+    //             //     {
+    //             //         cout << endl;
+    //             //         cout << "Removed bundle: " << i << endl;
+    //             //         cout << "Profit: " << bStat->bundleProfVec[i] << endl;
+    //             //         cout << "Serve: " << bStat->bundleServVec[i] << endl;
+    //             //         cout << endl;
+    //             //     }
+    //             // }
+    //             bStat->eligibleBundleVec[i] = (bStat->eligibleBundleVec[i] & priority[i]);
+    //         }
+    //     // }
 
-    }
+    // }
 
-    for (int i = 0; i < bStat->bundleVec.size(); i++) {
-        if (bStat->eligibleBundleVec[i] == false) {
-            nRemoved++;
-        }
-    }
+    // for (int i = 0; i < bStat->bundleVec.size(); i++) {
+    //     if (bStat->eligibleBundleVec[i] == false) {
+    //         nRemoved++;
+    //     }
+    // }
 
     // cout << endl;
     // cout << "total bundles: " << bStat->bundleVec.size() << endl;
@@ -532,7 +565,7 @@ void makeSmallerProblem2(instanceStat *inst, vector<nodeStat> &nodeVec, double *
         }
 
         else if (p == 0){
-            
+
         }
 
         else{
@@ -554,7 +587,6 @@ void makeSmallerProblem2(instanceStat *inst, vector<nodeStat> &nodeVec, double *
                     counter++;
                 }
 
-                // 
                 for (int j = 0; j < inst->m; j++){
                     // clsParcel[i].push_back(vecOfDist[j].parcelreq);
                     clsParcel[i].push_back(vecOfDist[j]);   // Adiciona o vetor de informações das parcels a respeito do cliente "i"
@@ -594,18 +626,9 @@ void feasibleBundleArcs2 (instanceStat *inst, double **mdist, vector<nodeStat> &
                 for (int j = 0; j < setP; j++){//j is not depot or dummy or parcel only
                     if (i != j){
                         if (j > currentCluster*(ref + 1) + ref || j < currentCluster*(ref + 1)){
-                            if (bStat->bundleEnd[j] <= inst->T){
-                                if (bStat->bundleStart[j] > 0){
-                                    if (bStat->bundleStart[i] + bStat->bundleServVec[i] + (mdist[bStat->lastElement[i]][bStat->firstElement[j]]/inst->vmed) <= bStat->bundleStart[j]){
-                                        if (bStat->eligibleBundleVec[i] && bStat->eligibleBundleVec[j]) {
-                                            bStat->bArcs[i][j] = true;
-                                        }
-                                    } 
-                                }
-                                else{
-                                    if (bStat->eligibleBundleVec[i] && bStat->eligibleBundleVec[j]) {
-                                        bStat->bArcs[i][j] = true;
-                                    }
+                            if (bStat->bundleEnd[i] + (mdist[bStat->lastElement[i]][bStat->firstElement[j]]/inst->vmed) <= bStat->bundleStart[j]){
+                                if (bStat->eligibleBundleVec[i] && bStat->eligibleBundleVec[j]) {
+                                    bStat->bArcs[i][j] = true;
                                 }
                             }
                         }
@@ -613,9 +636,11 @@ void feasibleBundleArcs2 (instanceStat *inst, double **mdist, vector<nodeStat> &
                 }
 
                 for (int j = setP; j < setN; j++){//j is parcel only bundle
-                    if (bStat->bundleStart[i] + bStat->bundleServVec[i] + (mdist[bStat->lastElement[i]][bStat->firstElement[j]]/inst->vmed) <= inst->T) {
-                        bStat->bArcs[i][j] = true;
-                    }                                   
+                    if (bStat->bundleEnd[i] + (mdist[bStat->lastElement[i]][bStat->firstElement[j]]/inst->vmed) + bStat->bundleServVec[j] <= inst->T) {
+                        if (bStat->eligibleBundleVec[i] && bStat->eligibleBundleVec[j]) {
+                            bStat->bArcs[i][j] = true;
+                        }
+                    }                               
                 }
 
                 for (int j = fDummy; j < bStat->bundleVec.size(); j++){//j is dummy node
@@ -631,19 +656,10 @@ void feasibleBundleArcs2 (instanceStat *inst, double **mdist, vector<nodeStat> &
                 currentCluster++;
                 bStat->clofbundle.push_back(currentCluster);
                 for (int j = 0; j < setP; j++){//j is a request bundle with customer
-                    if (bStat->bundleEnd[j] <= inst->T){
-                        if (bStat->bundleStart[j] > 0){
-                            if (bStat->bundleStart[i] + bStat->bundleServVec[i] + (mdist[bStat->lastElement[i]][bStat->firstElement[j]]/inst->vmed) <= bStat->bundleStart[j]){
-                                if (bStat->eligibleBundleVec[i] && bStat->eligibleBundleVec[j]) {
-                                    bStat->bArcs[i][j] = true;
-                                }                      
-                            }
-                        }
-                        else{
-                            if (bStat->eligibleBundleVec[i] && bStat->eligibleBundleVec[j]) {
-                                bStat->bArcs[i][j] = true;
-                            }
-                        }
+                    if (bStat->bundleStart[i] + bStat->bundleServVec[i] + (mdist[bStat->lastElement[i]][bStat->firstElement[j]]/inst->vmed) <= bStat->bundleStart[j]){
+                        if (bStat->eligibleBundleVec[i] && bStat->eligibleBundleVec[j]) {
+                            bStat->bArcs[i][j] = true;
+                        }        
                     }
                 }
                 for (int j = setP; j < setN; j++){//j is parcel only bundle
@@ -662,19 +678,10 @@ void feasibleBundleArcs2 (instanceStat *inst, double **mdist, vector<nodeStat> &
                 currentCluster++;
                 bStat->clofbundle.push_back(currentCluster);
                 for (int j = 0; j < setP; j++){//j is a request bundle with customer
-                    if (bStat->bundleEnd[j] <= inst->T){
-                        if (bStat->bundleStart[j] > 0){
-                            if (bStat->bundleStart[i] + bStat->bundleServVec[i] + (mdist[bStat->lastElement[i]][bStat->firstElement[j]]/inst->vmed) <= bStat->bundleStart[j]){
-                                if (bStat->eligibleBundleVec[i] && bStat->eligibleBundleVec[j]) {
-                                    bStat->bArcs[i][j] = true;
-                                }                      
-                            }
-                        }
-                        else{
-                            if (bStat->eligibleBundleVec[i] && bStat->eligibleBundleVec[j]) {
-                                bStat->bArcs[i][j] = true;
-                            }
-                        }
+                    if (bStat->bundleStart[i] + bStat->bundleServVec[i] + (mdist[bStat->lastElement[i]][bStat->firstElement[j]]/inst->vmed) <= bStat->bundleStart[j]){
+                        if (bStat->eligibleBundleVec[i] && bStat->eligibleBundleVec[j]) {
+                            bStat->bArcs[i][j] = true;
+                        }                      
                     }
                 }
 
@@ -708,9 +715,7 @@ void feasibleBundleArcs2 (instanceStat *inst, double **mdist, vector<nodeStat> &
     for (int i = 0; i < bStat->parcelBundleVec.size(); i++){
         for (int j = 0; j < bStat->parcelBundleVec[i].size(); j++){
             for (int k = 0; k < bStat->parcelBundleVec[i].size(); k++){
-                if (bStat->parcelBundleVec[i][j] != bStat->parcelBundleVec[i][k]){
-                    bStat->bArcs[bStat->parcelBundleVec[i][j]][bStat->parcelBundleVec[i][k]] = false;
-                }
+                bStat->bArcs[bStat->parcelBundleVec[i][j]][bStat->parcelBundleVec[i][k]] = false;
             }
         }
     }
@@ -718,7 +723,7 @@ void feasibleBundleArcs2 (instanceStat *inst, double **mdist, vector<nodeStat> &
     //remove arcs from/to bundles with negative start times
     for (int i = 0; i < bStat->bundleStart.size() - 1; i++){
         // cout << i << ": " << bStat->bundleStart[i] << endl;
-        if (bStat->bundleStart[i] < 0){
+        if (bStat->bundleStart[i] < 9){
             // cout << i << ": " << bStat->bundleStart[i] << endl;
             for (int j = 0; j < bStat->bundleVec.size() - 1; j++){
                 bStat->bArcs[j][i] = false;
@@ -732,36 +737,42 @@ void feasibleBundleArcs2 (instanceStat *inst, double **mdist, vector<nodeStat> &
         for(int j = 0; j < bStat->bundleVec.size(); j++){
             if (bStat->bArcs[i][j]){
                 bFArc.first = i;
-                bFArc.second = j;            
+                bFArc.second = j;         
                 
                 bStat->bArcMinus[j].push_back(bFArc);
                 bStat->bArcPlus[i].push_back(bFArc);
                 
                 bStat->bArcVec.push_back(bFArc);
 
-                if (i < setN){//i is a bundle of request
-                    if (j < setN){ // j is a bundle of request
-                        for (int k = 0; k < inst->K; k++){ // in this case, all vehicles are available
-                            bStat->arcV[i][j].push_back(k);
-                        }                        
-                    }
-                    else if (j >= fDummy){ //j is a dummy bundle
-                        auxK = j - fDummy; //k is the vehicle associated with dummy bundle j
-                        bStat->arcV[i][j].push_back(auxK);                         
+                for (int k = 0; k < inst->K; k++) {
+                    if (bStat->eligibleBundleVecV[i][k] && bStat->eligibleBundleVecV[j][k]) {
+                        bStat->arcV[i][j].push_back(k);
                     }
                 }
-                else if (i < fDummy){//i is a starting bundle
-                    if (j < setN){ //j is a request bundle
-                        auxK = i - setN;
-                        bStat->arcV[i][j].push_back(auxK);                         
-                    }              
-                }
+
+                // if (i < setN){//i is a bundle of request
+                //     if (j < setN){ // j is a bundle of request
+                //         for (int k = 0; k < inst->K; k++){ // in this case, all vehicles are available
+                //             bStat->arcV[i][j].push_back(k);
+                //         }                        
+                //     }
+                //     else if (j >= fDummy){ //j is a dummy bundle
+                //         auxK = j - fDummy; //k is the vehicle associated with dummy bundle j
+                //         bStat->arcV[i][j].push_back(auxK);                         
+                //     }
+                // }
+                // else if (i < fDummy){//i is a starting bundle
+                //     if (j < setN){ //j is a request bundle
+                //         auxK = i - setN;
+                //         bStat->arcV[i][j].push_back(auxK);                         
+                //     }              
+                // }
             }
         }
-        if (i >= setN && i < fDummy){//i is a starting bundle
-            auxK = i - setN; //arc from starting node to end depot
-            bStat->arcV[i][i + inst->K].push_back(auxK);
-        }
+        // if (i >= setN && i < fDummy){//i is a starting bundle
+        //     auxK = i - setN; //arc from starting node to end depot
+        //     bStat->arcV[i][i + inst->K].push_back(auxK);
+        // }
     }
 
     //creating the vectors for leaving incoming arcs with available vehicles
@@ -1039,7 +1050,7 @@ void feasibleClusterArcs2 (instanceStat *inst, vector<nodeStat> &nodeVec, bundle
     setP = setN;
 
     cset = cStat->clusterVec.size() - (inst->K*2);
-    csetP = cset;
+    csetP = cset - inst->m;
     // csetP = cStat->clusterVec.size() - (inst->K*2) - inst->m;
 
     ref = 3*inst->m;
@@ -1054,7 +1065,7 @@ void feasibleClusterArcs2 (instanceStat *inst, vector<nodeStat> &nodeVec, bundle
     int auxK;
 
     for (int i = 0; i < bStat->bundleVec.size(); i++){
-        if (i < setP){//i is a request bundle
+        if (i < setP){//i is a request bundle with customer
             if (i > clusterA*(ref + 1) + ref){
                 clusterA++;
             }
@@ -1070,7 +1081,7 @@ void feasibleClusterArcs2 (instanceStat *inst, vector<nodeStat> &nodeVec, bundle
             if (j < setP){//j is a request bundle
                 if (j > clusterB*(ref + 1) + ref){
                     clusterB++;
-                }                
+                }              
             }
             else{
                 if(problem->scen == "1A" || problem->scen == "1AD"){
@@ -1109,6 +1120,9 @@ void feasibleClusterArcs2 (instanceStat *inst, vector<nodeStat> &nodeVec, bundle
         int j = bStat->bArcVec[a].second;
         int cA = bStat->clofbundle[i];
         int cB = bStat->clofbundle[j];
+
+        // cout << i << " " << cA << endl;
+        // getchar();
 
         for (int k1 = 0; k1 < bStat->arcV[i][j].size(); k1++){
             int k = bStat->arcV[i][j][k1];
@@ -1161,38 +1175,10 @@ void makeStartTimes2 (instanceStat *inst, double **mdist, vector<nodeStat> &node
         foundpass = false;
 
         if (bStat->bundleVec[i].size() > 1){
-            if (bStat->bundleVec[i][0] < inst->n)
-            
-            {//if the 1st element of the bundle is a passenger node(d-P-D)
-                foundpass = true;
-                bundleTime = nodeVec[bStat->bundleVec[i][0]].e;
-
-                tij = ((mdist[bStat->bundleVec[i][0]][bStat->bundleVec[i][1]])/inst->vmed);
-                endTime = bundleTime + nodeVec[bStat->bundleVec[i][0]].delta + tij;
-
-                for (int j = 1; j < bStat->bundleVec[i].size() - 1; j++){
-                    endTime += nodeVec[bStat->bundleVec[i][j]].delta;
-                    tij = ((mdist[bStat->bundleVec[i][j]][bStat->bundleVec[i][j + 1]])/inst->vmed);
-                    endTime += tij;
-                }
-            }
-
-            else if (bStat->bundleVec[i].back() < inst->n)
-            
-            {//the last element is a passenger(P-D-d)
-                endTime = nodeVec[bStat->bundleVec[i].back()].e;
-                bundleTime = endTime;
-
-                for (int j = 0; j < bStat->bundleVec[i].size() - 1; j++){
-                    bundleTime -= nodeVec[bStat->bundleVec[i][j]].delta;
-                    tij = ((mdist[bStat->bundleVec[i][j]][bStat->bundleVec[i][j + 1]])/inst->vmed);
-                    bundleTime -= tij;
-                }
-            }
-
-            else if (bStat->bundleVec[i].size() > 2)
+            if (bStat->bundleVec[i].size() > 2)
             
             {
+                // cout << "P C D" << endl;
                 for (int j = 0; j < bStat->bundleVec[i].size() - 1; j++){
                     tij = ((mdist[bStat->bundleVec[i][j]][bStat->bundleVec[i][j + 1]])/inst->vmed);
                     if (bStat->bundleVec[i][j] >= inst->n){//if the element of the bundle is not a passenger request
@@ -1216,13 +1202,40 @@ void makeStartTimes2 (instanceStat *inst, double **mdist, vector<nodeStat> &node
                     }
                 }
             }
+            else if (bStat->bundleVec[i][0] < inst->n)
+            
+            {
+                // cout << "C D" << endl;
+                foundpass = true;
+                bundleTime = nodeVec[bStat->bundleVec[i][0]].e;
+
+                tij = ((mdist[bStat->bundleVec[i][0]][bStat->bundleVec[i][1]])/inst->vmed);
+                endTime = bundleTime + nodeVec[bStat->bundleVec[i][0]].delta + tij;
+            }
+
+            else if (bStat->bundleVec[i].back() < inst->n)
+            
+            {
+                // cout << "P C" << endl;
+                endTime = nodeVec[bStat->bundleVec[i].back()].e;
+                bundleTime = endTime;
+
+                for (int j = 0; j < bStat->bundleVec[i].size() - 1; j++){
+                    bundleTime -= nodeVec[bStat->bundleVec[i][j]].delta;
+                    tij = ((mdist[bStat->bundleVec[i][j]][bStat->bundleVec[i][j + 1]])/inst->vmed);
+                    bundleTime -= tij;
+                }
+            }
 
             else 
 
             {
+                // cout << "P D" << endl;
                 bundleTime = 9;
                 endTime = inst->T - nodeVec[bStat->bundleVec[i].back()].delta;
             }
+            // cout << bundleTime << " vs " << endTime << endl; 
+            // getchar();
             
             endTime += nodeVec[bStat->bundleVec[i].back()].delta;
             bStat->bundleEnd.push_back(endTime);
@@ -1232,10 +1245,22 @@ void makeStartTimes2 (instanceStat *inst, double **mdist, vector<nodeStat> &node
 
         else{
             foundpass = true;
+
+            bool isDepot = i >= bStat->bundleVec.size() - 2*inst->K;
+
             bundleTime = nodeVec[bStat->bundleVec[i][0]].e;
-            bStat->bundleStart.push_back(bundleTime);
+            if (isDepot) {
+                bStat->bundleStart.push_back(9);
+            } else {
+                bStat->bundleStart.push_back(bundleTime);
+            }
+            
             bundleTime = nodeVec[bStat->bundleVec[i][0]].e + nodeVec[bStat->bundleVec[i][0]].delta;
-            bStat->bundleEnd.push_back(bundleTime);
+            if (isDepot) {
+                bStat->bundleEnd.push_back(19);
+            } else {
+                bStat->bundleEnd.push_back(bundleTime);
+            }
             continue;
         }
     }
