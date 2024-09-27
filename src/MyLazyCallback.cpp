@@ -7,61 +7,21 @@
 MyLazyCallback::MyLazyCallback(IloEnv env, const IloArray <IloArray <IloBoolVarArray> >& x_ref, bundleStat *bStat, double **mdist, instanceStat *inst, probStat* problem, vector<nodeStat> &nodeVec, int nodes, int veic, int parcels, int customers) : IloCplex::LazyConstraintCallbackI(env), x(x_ref), x_vars(env), bStat(bStat), mdist(mdist), inst(inst), problem(problem), nodeVec(nodeVec), n(nodes), v(veic), nParcels(parcels), nCustomers(customers)
 {
 	int num = 0;
-	/********** Filling x_vars **********/
-	// for(int i = 0; i < n; i++) {
-	// 	for(int j = 0; j < n; j++){
-	// 		if (!bStat->bArcs[i][j]) {
-	// 			continue;
-	// 		}
-	// 		for (int k1 = 0; k1 < bStat->arcV[i][j].size(); k1++) {
-	// 			int k = bStat->arcV[i][j][k1];
-	// 			x_vars.add(x[i][j][k]);
-	// 		}
-	// 	}
-	// }
-	// /************************************/
 
+	int l = 0;
 	for (int i = 0; i < bStat->bundleVec.size(); i++) {
         for (int j = 0; j < bStat->bundleVec.size(); j++) {
 			if (!bStat->bArcs[i][j]) {
-				// cout << i << " " << j << endl;
 				continue;
 			}
 			
 			for (int k1 = 0; k1 < bStat->arcV[i][j].size(); k1++)
 			{
 				int k = bStat->arcV[i][j][k1];
-				// cout << i << " " << j << " " << k << endl;
 				x_vars.add(x[i][j][k]);
 			}
         }
     }
-
-	// int V = nCustomers + 2*nParcels + v;
-
-	// for (int i = 0; i < V; i++){
-	// 	if (i >= nCustomers && i < nCustomers + 2*nParcels) {
-	// 		continue;
-	// 	}
-
-    //     for(int j = 0; j < n; ++j){
-	// 		if (j >= nCustomers && j < V) {
-	// 			continue;
-	// 		}
-
-    //         if (nas->arcs[i][j] != true){
-    //             continue; // If arc i to j is invalid
-    //         }
-
-	// 		for (int a = 0; a < nas->subsequences[make_pair(i, j)].size(); a++) {
-	// 			for(int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
-	// 				int k = nas->arcV[i][j][k1];
-	// 				x_vars.add(x[i][j][a][k]);
-	// 				// // TODO UNCOMMENT //  << "x: [" << i << "][" << j << "][" << k << "]" << endl;
-	// 			}
-	// 		}
-    //     }
-    // }
 }
 /*****************************************************************************************************************/
 
@@ -77,13 +37,11 @@ void MyLazyCallback::main()
 {	
 	// cout << "LAZY CALLBACK" << endl;
 
+	cout << "teste 1" << endl;
+
 	IloNumArray x_vals(getEnv());
     getValues(x_vals, x_vars);
 
-	// 1: d;
-	// 2: P - d - D;
-	// 3: P - d;
-	// 4: d - C;
 	const int bundlesPerCustomer = 1 + 3*this->nParcels;
 
 	int relevantNodes = bStat->bundleVec.size() - (2*inst->K + inst->m); 
@@ -98,71 +56,34 @@ void MyLazyCallback::main()
     // Imprimir os valores das variáveis relaxadas
     int firstIndex 	= 0;
 	int lastIndex 	= bundlesPerCustomer*this->nCustomers + this->nParcels + 2*this->v - 1;
-	int l = -1;
+	int l = 0;
 
     for (int i = 0; i < bStat->bundleVec.size(); i++) {
         for (int j = 0; j < bStat->bundleVec.size(); j++) {
-			// cout << i << " " << j << endl;
+
 			if (!bStat->bArcs[i][j]) {
-				// cout << i << " " << j << endl;
 				continue;
 			}
 
-			// cout << i << " " << j << endl;
 			for (int k1 = 0; k1 < bStat->arcV[i][j].size(); k1++)
 			{
 				int k = bStat->arcV[i][j][k1];
 
-				// cout << "x: " << getValue(x[i][j][k]) << endl;
 				if (x_vals[l++] > EPSILON)
 				{
-					cout << i << " " << j << " " << k << endl;
 					arcDirection[i] = j;
-					break;
 				}
 			}
-			// cout << endl;
-
-			// pair<int, int> myPair = make_pair(i, j);
-
-			// for (int a = 0; a < nas->subsequences[myPair].size(); a++) {
-			// 	for (int k1 = 0; k1 < nas->arcV[i][j].size(); k1++)
-			// 	{
-			// 		int k = nas->arcV[i][j][k1];
-			// 		if (x_vals[index] > EPSILON)
-			// 		{
-			// 			arcDirection[i] = j;
-			// 			arcChosen[myPair] = a;
-			// 			// cout << i << " " << j << " " << k << endl;
-			// 		}
-			// 		index++;
-			// 	}
-			// }
         }
     }
-	getchar();
 
     // Liberar a memória
     x_vals.end();
-
-	// Remember: "this->v" is the numver of available vehicles
-	// cout << endl;
-	// cout << "ROTAS" << endl;
-	// cout << "numCustomers = " << this->nCustomers << endl;
-	// cout << "numParcels = " << this->nParcels << endl;
-	// cout << "numVehicles = " << this->v << endl;
 
 	for (int i = 0; i < this->v; i++)
 	{
 		int startDepotIndex = bundlesPerCustomer*this->nCustomers + this->nParcels + i;	// Start depot for the current vehicle
 		int finalDepotIndex = startDepotIndex + this->v;								// Final depot for the current vehicle
-
-		// cout << endl;
-		// cout << "i = " << i << endl;
-		// cout << "startDepotIndex = " << startDepotIndex << endl;
-		// cout << "finalDepotIndex = " << finalDepotIndex << endl;
-		// cout << "arcDirection[" << startDepotIndex << "] = " << arcDirection[startDepotIndex] << endl;
-		// cout << endl;
 
 		routes.emplace_back(); // Creating a new route
 
@@ -174,9 +95,6 @@ void MyLazyCallback::main()
 			int prevNode = startDepotIndex;
 			for (int nextNode = arcDirection[startDepotIndex]; nextNode != finalDepotIndex; nextNode = arcDirection[nextNode])
 			{
-				// cout << "nextNode: " << nextNode << endl;
-				// cout << "arcDirection[" << nextNode << "] = " << arcDirection[nextNode] << endl;
-
 				routes[i].push_back(nextNode);
 				prevNode = nextNode;
 				used[nextNode] = true;
@@ -185,12 +103,6 @@ void MyLazyCallback::main()
 		routes[i].push_back(finalDepotIndex);
 		used[finalDepotIndex] = true;
 	}
-	// for (int k = 0; k < routes.size(); k++) {
-	// 	for (int i = 0; i < routes[k].size(); i++) {
-	// 		cerr << routes[k][i] << " ";
-	// 	}
-	// 	cerr << endl;
-	// }
 	
 	for (int i = 0; i < bStat->bundleVec.size(); i++)
 	{
@@ -212,7 +124,7 @@ void MyLazyCallback::main()
 		}
 	}
 
-	cout << "depois" << endl;
+	// cout << "depois" << endl;
 
 	// for (int k = 0; k < subtours.size(); k++) {
 	// 	for (int i = 0; i < subtours[k].size(); i++) {
@@ -420,6 +332,8 @@ void MyLazyCallback::main()
 			int v = ToPrevent[k][i+1];
 			int h = u;
 
+			cout << u << " ";
+
 			for (int k1 = 0; k1 < bStat->arcV[u][v].size(); k1++) {
 				int k2 = bStat->arcV[u][v][k1];
 
@@ -430,6 +344,8 @@ void MyLazyCallback::main()
 			// 	cout << bStat->bundleVec[h][j] << " ";
 			// }
 		}
+
+		cout << ToPrevent[k].back() << endl;
 		// for (int j = 0; j < ToPrevent.back().size(); j++) {
 		// 	cout << bStat->bundleVec.back()[j] << " ";
 		// }
@@ -467,9 +383,11 @@ void MyLazyCallback::main()
 		add(expr <= (int)subtours[k].size() - 1);
 	}
 
-	if (lazyCut) {
-		cout << "LAZYCUT" << endl;
-	}
+	// if (lazyCut) {
+	// 	cout << "LAZYCUT" << endl;
+	// }
+
+	cout << "teste 2" << endl;
 
 	/********** Searching for infeasibility **********/
 }

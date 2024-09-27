@@ -1382,6 +1382,8 @@ void nodeSolution2 (instanceStat *inst, double **mdist, bundleStat *bStat, vecto
 
     vector<int> vehicleNumbers;
 
+    double solVal = 0;
+
     for (int k = 0; k < inst->K; k++){
         cout << "Vehicle " << k << ": ";
 
@@ -1391,7 +1393,10 @@ void nodeSolution2 (instanceStat *inst, double **mdist, bundleStat *bStat, vecto
         }
 
         for (int i = 0; i < sStat->solInNode[k].size(); i++){
+            solVal += nodeVec[sStat->solInNode[k][i]].profit;
+
             if (i < sStat->solInNode[k].size() - 1){
+                solVal -= mdist[sStat->solInNode[k][i]][sStat->solInNode[k][i+1]]*inst->costkm;
                 cout << sStat->solInNode[k][i] << " - ";
             }
             else{
@@ -1405,6 +1410,9 @@ void nodeSolution2 (instanceStat *inst, double **mdist, bundleStat *bStat, vecto
         cout << " - Total time: " << bStat->bundleEnd[sStat->solOrder[k][sStat->solOrder[k].size()-2]] - bStat->bundleStart[sStat->solOrder[k][1]] + (mdist[currSP][bStat->firstElement[sStat->solOrder[k][1]]]/inst->vmed) << endl;
     }
     cout << endl;
+
+    // cout << solVal << endl;
+    // getchar();
 
     cout << "\nSolution structure: " << endl;
     for (int k = 0; k < inst->K; k++){

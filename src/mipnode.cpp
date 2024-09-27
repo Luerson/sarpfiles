@@ -185,7 +185,7 @@ void mipnode(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 
 	//Constraint 1 - All passenger nodes must be visited
 
-	for (int i = 0; i < inst->n + 2*inst->m; i++){
+	for (int i = 0; i < inst->n; i++){
 		IloExpr exp(env);
 		for (int k = 0; k < inst->K; k++){
 			for (int a = 0; a < nas->vArcPlus[i][k].size(); a++){
@@ -200,6 +200,31 @@ void mipnode(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 		cons.setName(var);
 		model.add(cons);
 	}
+
+	// model.add(x[21][10][0] == 1);
+	// model.add(x[10][17][0] == 1);
+	// model.add(x[17][4][0] == 1);
+	// model.add(x[4][24][0] == 1);
+
+	// model.add(x[22][2][1] == 1);
+	// model.add(x[2][13][1] == 1);
+	// model.add(x[13][20][1] == 1);
+	// model.add(x[20][6][1] == 1);
+	// model.add(x[6][8][1] == 1);
+	// model.add(x[8][1][1] == 1);
+	// model.add(x[1][15][1] == 1);
+	// model.add(x[15][25][1] == 1);
+
+	// model.add(x[23][5][2] == 1);
+	// model.add(x[5][11][2] == 1);
+	// model.add(x[11][18][2] == 1);
+	// model.add(x[18][0][2] == 1);
+	// model.add(x[0][9][2] == 1);
+	// model.add(x[9][16][2] == 1);
+	// model.add(x[16][12][2] == 1);
+	// model.add(x[12][3][2] == 1);
+	// model.add(x[3][19][2] == 1);
+	// model.add(x[19][26][2] == 1);
 
 	//Constraint 2 - Relationship between visit variable and parcel node arcs
 	//A parcel request can be denied
