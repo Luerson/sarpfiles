@@ -22,6 +22,96 @@ MyLazyCallback::MyLazyCallback(IloEnv env, const IloArray <IloArray <IloBoolVarA
 			}
         }
     }
+
+	/*********** Auxiliary Vectors to easily identify types of bundles ***********/
+	pickupBundles 	= vector<bool>(bStat->bundleVec.size(), false);
+	deliveryBundles = vector<bool>(bStat->bundleVec.size(), false);
+	pdBundles		= vector<bool>(bStat->bundleVec.size(), false);
+	customerBundles = vector<bool>(bStat->bundleVec.size(), false);
+	pcdBundles 		= vector<bool>(bStat->bundleVec.size(), false);
+	depotBundles	= vector<bool>(bStat->bundleVec.size(), false);
+
+	const int bundlesPerCustomer 		= 1 + 3*this->nParcels;
+	const int firstPickupDeliveryIndex	= bundlesPerCustomer*nCustomers;
+	const int firstDepotIndex			= bundlesPerCustomer*nCustomers + inst->m;
+
+	// customer bundles
+	for (int i = 0; i < firstPickupDeliveryIndex; i += bundlesPerCustomer)
+	{
+		customerBundles[i] = true;
+		customerBundles_Iter.push_back(i);
+
+		const int nextCustomer = i + bundlesPerCustomer;
+
+		// "P - d - D" bundles
+		for (int j = i+1; j < nextCustomer; j += 3)
+		{
+			pcdBundles[j] = true;
+			pcdBundles_Iter.push_back(j);
+		}
+
+		// "P - d" bundles
+		for (int j = i+2; j < nextCustomer; j += 3)
+		{
+			pickupBundles[j] = true;
+			pickupBundles_Iter.push_back(j);
+		}
+
+		// "d - D" bundles
+		for (int j = i+3; j < nextCustomer; j += 3)
+		{
+			deliveryBundles[j] = true;
+			deliveryBundles_Iter.push_back(j);
+		}
+	}
+
+	// "P - D" bundles
+	for (int i = firstPickupDeliveryIndex; i < firstDepotIndex; i++)
+	{
+		pdBundles[i] = true;
+		pdBundles_Iter.push_back(i);
+	}
+
+	// depot bundles
+	for (int i = firstDepotIndex; i < depotBundles.size(); i++)
+	{
+		depotBundles[i] = true;
+		depotBundles_Iter.push_back(i);
+	}
+
+	// Printing the vectors
+	// for (int i = 0; i < bStat->bundleVec.size(); i++)
+	// {
+	// 	cout << (customerBundles[i]) << " ";
+	// }
+	// cout << endl;
+	// for (int i = 0; i < bStat->bundleVec.size(); i++)
+	// {
+	// 	cout << (pcdBundles[i]) << " ";
+	// }
+	// cout << endl;
+	// for (int i = 0; i < bStat->bundleVec.size(); i++)
+	// {
+	// 	cout << (pickupBundles[i]) << " ";
+	// }
+	// cout << endl;
+	// for (int i = 0; i < bStat->bundleVec.size(); i++)
+	// {
+	// 	cout << (deliveryBundles[i]) << " ";
+	// }
+	// cout << endl;
+	// for (int i = 0; i < bStat->bundleVec.size(); i++)
+	// {
+	// 	cout << (pdBundles[i]) << " ";
+	// }
+	// cout << endl;
+	// for (int i = 0; i < bStat->bundleVec.size(); i++)
+	// {
+	// 	cout << (depotBundles[i]) << " ";
+	// }
+	// cout << endl;
+
+	// getchar();
 }
 /*****************************************************************************************************************/
 
@@ -53,7 +143,6 @@ void MyLazyCallback::main()
 	vector<bool> used(bStat->bundleVec.size(), false);
 	vector<vector<int>> subtours;
 
-    // Imprimir os valores das variáveis relaxadas
     int firstIndex 	= 0;
 	int lastIndex 	= bundlesPerCustomer*this->nCustomers + this->nParcels + 2*this->v - 1;
 	int l = 0;
@@ -148,45 +237,9 @@ void MyLazyCallback::main()
 	// 	 cout << routes[i].back() << endl;
 	// }
 
-	vector<bool> pickupBundles(bStat->bundleVec.size(), false);
-	vector<bool> deliveryBundles(bStat->bundleVec.size(), false);
-	vector<bool> fullParcelBundle(bStat->bundleVec.size(), false);
 	vector<vector<int>> ToPrevent;
 
-	for (int k = 0; k < routes.size(); k++) {
-		for (int i = 0; i < routes[k].size(); i++) {
-			int h = routes[k][i];
-
-			int u = bStat->bundleVec[h][0];
-			int v = bStat->bundleVec[h][1];
-
-			if (bStat->bundleVec[h].size() == 2) {
-				// cout << u << " " << v << endl;
-				// getchar();
-
-				if (u < inst->n && v >= inst->n + inst->m && v < inst->n + 2*inst->m) {
-					deliveryBundles[h] = true;
-				}
-				
-				else
-
-				if (v < inst->n && u >= inst->n && u < inst->n + inst->m) {
-					pickupBundles[h] = true;
-				}
-
-				else
-
-				{
-					fullParcelBundle[h] = true;
-				}
-			} else {
-				if (u >= inst->n && u < inst->n + inst->m) {
-					fullParcelBundle[h] = true;
-				}
-			}
-		}
-	}
-
+	/********** Adding sequences of type "P - d - ... - P" to ToPrevent **********/
 	for (int k = 0; k < routes.size(); k++) {
 		vector<int> sequence;
 		bool restricted = false;
@@ -197,7 +250,7 @@ void MyLazyCallback::main()
 			if (deliveryBundles[h]) {
 				restricted = false;
 				sequence.clear();
-			} else if ((pickupBundles[h] || fullParcelBundle[h]) && restricted) {
+			} else if ((pickupBundles[h] || pdBundles[h] || pcdBundles[h]) && restricted) {
 				sequence.push_back(h);
 				ToPrevent.push_back(sequence);
 				sequence.clear();
@@ -212,6 +265,67 @@ void MyLazyCallback::main()
 		}
 	}
 
+	// cout << endl;
+	// cout << "SEQUENCES!" << endl;
+
+	// for (int i = 0; i < ToPrevent.size(); i++)
+	// {
+	// 	for (int j = 0; j < ToPrevent[i].size(); j++)
+	// 	{
+	// 		if (pickupBundles[ ToPrevent[i][j] ])
+	// 		{
+	// 			cout << "- P - d ";
+	// 		}
+	// 		else if (deliveryBundles[ ToPrevent[i][j] ])
+	// 		{
+	// 			cout << "- d - D ";
+	// 		}
+	// 		else if (pdBundles[ ToPrevent[i][j] ])
+	// 		{
+	// 			cout << "- P - D ";
+	// 		}
+	// 		else if (pcdBundles[ ToPrevent[i][j] ])
+	// 		{
+	// 			cout << "- P - d - D ";
+	// 		}
+	// 		else if (customerBundles[ ToPrevent[i][j] ])
+	// 		{
+	// 			cout << "- d ";
+	// 		}
+	// 	}
+	// 	cout << endl;
+	// }
+
+	// getchar();
+
+	for (int s = 0; s < ToPrevent.size(); s++)
+	{
+		IloExpr customersExpr(getEnv());
+		IloExpr expr(getEnv());
+
+		const int numEdges = ToPrevent[s].size() - 1;
+
+
+		/********** As the customers expression part is always the same, let's calculate it first **********/
+		for (int i = 1; i < ToPrevent[s].size() - 2; i++)
+		{
+			const int u = ToPrevent[s][i];
+			const int v = ToPrevent[s][i+1];
+
+			for (int k1 = 0; k1 < bStat->arcV[u][v].size(); k1++)
+			{
+				const int k = bStat->arcV[u][v][k1];
+
+				customersExpr += x[u][v][k];
+			}
+		}
+
+		/********** The actual expressions/lazy constraints **********/
+
+	}
+	ToPrevent.clear();
+
+	/********** Adding sequences of type "d - P - D - ... - d" that violate customers time windows to ToPrevent **********/
 	for (int k = 0; k < routes.size(); k++) {
 		vector<int> sequence;
 		int lastRelevant = routes[k][0];
@@ -324,38 +438,38 @@ void MyLazyCallback::main()
 
 	bool lazyCut = false;
 
-	for (int k = 0; k < ToPrevent.size(); k++) {
-		IloExpr expr(getEnv());
+	// for (int k = 0; k < ToPrevent.size(); k++) {
+	// 	IloExpr expr(getEnv());
 
-		for (int i = 0; i < ToPrevent[k].size() - 1; i++) {
-			int u = ToPrevent[k][i];
-			int v = ToPrevent[k][i+1];
-			int h = u;
+	// 	for (int i = 0; i < ToPrevent[k].size() - 1; i++) {
+	// 		int u = ToPrevent[k][i];
+	// 		int v = ToPrevent[k][i+1];
+	// 		int h = u;
 
-			cout << u << " ";
+	// 		cout << u << " ";
 
-			for (int k1 = 0; k1 < bStat->arcV[u][v].size(); k1++) {
-				int k2 = bStat->arcV[u][v][k1];
+	// 		for (int k1 = 0; k1 < bStat->arcV[u][v].size(); k1++) {
+	// 			int k2 = bStat->arcV[u][v][k1];
 
-				expr += x[u][v][k2];
-			}
+	// 			expr += x[u][v][k2];
+	// 		}
 
-			// for (int j = 0; j < bStat->bundleVec[h].size(); j++) {
-			// 	cout << bStat->bundleVec[h][j] << " ";
-			// }
-		}
+	// 		// for (int j = 0; j < bStat->bundleVec[h].size(); j++) {
+	// 		// 	cout << bStat->bundleVec[h][j] << " ";
+	// 		// }
+	// 	}
 
-		cout << ToPrevent[k].back() << endl;
-		// for (int j = 0; j < ToPrevent.back().size(); j++) {
-		// 	cout << bStat->bundleVec.back()[j] << " ";
-		// }
-		// cout << endl;
-		// getchar();
+	// 	cout << ToPrevent[k].back() << endl;
+	// 	// for (int j = 0; j < ToPrevent.back().size(); j++) {
+	// 	// 	cout << bStat->bundleVec.back()[j] << " ";
+	// 	// }
+	// 	// cout << endl;
+	// 	// getchar();
 
-		lazyCut = true;
+	// 	lazyCut = true;
 
-		add(expr <= (int)ToPrevent[k].size() - 2);
-	}
+	// 	add(expr <= (int)ToPrevent[k].size() - 2);
+	// }
 
 	for (int k = 0; k < subtours.size(); k++) {
 		IloExpr expr(getEnv());
@@ -383,9 +497,9 @@ void MyLazyCallback::main()
 		add(expr <= (int)subtours[k].size() - 1);
 	}
 
-	// if (lazyCut) {
-	// 	cout << "LAZYCUT" << endl;
-	// }
+	if (lazyCut) {
+		cout << "LAZYCUT" << endl;
+	}
 
 	cout << "teste 2" << endl;
 
