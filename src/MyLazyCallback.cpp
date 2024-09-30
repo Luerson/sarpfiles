@@ -135,6 +135,8 @@ void MyLazyCallback::main()
 	const int bundlesPerCustomer = 1 + 3*this->nParcels;
 
 	int relevantNodes = bStat->bundleVec.size() - (2*inst->K + inst->m); 
+	int fDummy = inst->n + 2*inst->m + inst->K;
+	int bundleDepots = bStat->bundleVec.size() - 2*inst->K;
 
 	// Matrix to store every route in the current solution
 	vector<vector<int>> routes;
@@ -250,7 +252,7 @@ void MyLazyCallback::main()
 			if (deliveryBundles[h]) {
 				restricted = false;
 				sequence.clear();
-			} else if ((pickupBundles[h] || pdBundles[h] || pcdBundles[h]) && restricted) {
+			} else if ((pickupBundles[h] || pdBundles[h] || pcdBundles[h] || i == routes[k].size() - 1) && restricted) {
 				sequence.push_back(h);
 				ToPrevent.push_back(sequence);
 				sequence.clear();
@@ -305,7 +307,6 @@ void MyLazyCallback::main()
 
 		const int numEdges = ToPrevent[s].size() - 1;
 
-
 		/********** As the customers expression part is always the same, let's calculate it first **********/
 		for (int i = 1; i < ToPrevent[s].size() - 2; i++)
 		{
@@ -319,9 +320,61 @@ void MyLazyCallback::main()
 				customersExpr += x[u][v][k];
 			}
 		}
-
+		
 		/********** The actual expressions/lazy constraints **********/
 
+		int firstArcLastBundle = ToPrevent[s][1];
+		int lastArcFirstBundle = ToPrevent[s][ToPrevent[s].size() - 2];
+
+		/********** The first "P - d" can't be replaced by any other "P - d" **********/
+		for (int i = 0; i < inst->m; i++) {
+			for (int j = 0; j < bStat->parcelBundleVec[i].size(); j++) {
+				int bundle = bStat->parcelBundleVec[i][j];
+
+				int _size = bStat->bundleVec[bundle].size();
+				
+				if (_size == 2) {
+					int v = bStat->bundleVec[bundle][1];
+
+					if (v < inst->n) {
+						for (int k1 = 0; k1 < bStat->arcV[bundle][firstArcLastBundle].size(); k1++)
+						{
+							const int k = bStat->arcV[bundle][firstArcLastBundle][k1];
+
+							expr += x[bundle][firstArcLastBundle][k];
+						}
+					}
+				}
+			}
+		}
+
+		/********** These sequences should not end in a bundle with pickup **********/
+		for (int i = 0; i < inst->m; i++) {
+			for (int j = 0; j < bStat->parcelBundleVec[i].size(); j++) {
+				int bundle = bStat->parcelBundleVec[i][j];
+
+				for (int k1 = 0; k1 < bStat->arcV[lastArcFirstBundle][bundle].size(); k1++)
+				{
+					const int k = bStat->arcV[lastArcFirstBundle][bundle][k1];
+
+					expr += x[lastArcFirstBundle][bundle][k];
+				}
+			}
+		}
+
+		/********** In case the last element is a dummy **********/
+		if (ToPrevent[s].back() >= fDummy) {
+			int u = ToPrevent[s][ToPrevent[s].size() - 2];
+			int v = ToPrevent[s][ToPrevent[s].size() - 1];
+
+			for (int k1 = 0; k1 < bStat->arcV[u][v].size(); k1++) {
+				int k = bStat->arcV[u][v][k1];
+
+				expr += x[u][v][k];
+			}
+		}
+
+		add(customersExpr + expr <= numEdges - 1);
 	}
 	ToPrevent.clear();
 
@@ -404,6 +457,94 @@ void MyLazyCallback::main()
 			}
 		}
 	}
+
+	for (int s = 0; s < ToPrevent.size(); s++)
+	{
+		IloExpr pdExpr(getEnv());
+		IloExpr expr(getEnv());
+
+		const int numEdges = ToPrevent[s].size() - 1;
+
+		/********** As the "P - D" expression part is always the same, let's calculate it first **********/
+		for (int i = 1; i < ToPrevent[s].size() - 2; i++)
+		{
+			const int u = ToPrevent[s][i];
+			const int v = ToPrevent[s][i+1];
+
+			for (int k1 = 0; k1 < bStat->arcV[u][v].size(); k1++)
+			{
+				const int k = bStat->arcV[u][v][k1];
+
+				pdExpr += x[u][v][k];
+			}
+		}
+		
+		/********** The actual expressions/lazy constraints **********/
+
+		int firstArcLastBundle = ToPrevent[s][1];
+		int lastArcFirstBundle = ToPrevent[s][ToPrevent[s].size() - 2];
+
+		int i1 = bStat->lastElement[ToPrevent[s][0]];
+		int j1 = bStat->firstElement[firstArcLastBundle];
+
+		int i2 = bStat->lastElement[lastArcFirstBundle];
+		int j2 = bStat->firstElement[ToPrevent[s].back()];
+
+		double firstArcEndTime  =  bStat->bundleEnd[ToPrevent[s][0]] + mdist[i1][j1]/inst->vmed;
+		double lastArcStartTime =  bStat->bundleStart[ToPrevent[s].back()] - mdist[i2][j2]/inst->vmed;
+
+		if (ToPrevent[s][0] >= bundleDepots) {
+			firstArcEndTime = 9 + mdist[i1][j1]/inst->vmed;
+		}
+
+		if (ToPrevent[s].back() >= bundleDepots) {
+			lastArcFirstBundle = 19 - mdist[i2][j2]/inst->vmed;
+		}
+		
+		/********** The first bundle can't end later then the main one **********/
+		int cluster = bStat->clofbundle[ToPrevent[s][0]];
+		int start   = cluster*(1 + 3*inst->m);
+		int end     = (cluster + 1)*(1 + 3*inst->m);
+
+		if (cluster >= inst->n) {
+			start = bundleDepots - inst->n + cluster;
+			end = bundleDepots - inst->n + cluster;
+		}
+
+		for (int i = start; i < end; i++) {
+			double bundleEnd = bStat->bundleEnd[i] + mdist[bStat->lastElement[i]][j1];
+
+			if (bundleEnd >= firstArcEndTime) {
+				for (int k1 = 0; k1 < bStat->arcV[i][firstArcLastBundle].size(); k1++)
+				{
+					const int k = bStat->arcV[i][firstArcLastBundle][k1];
+
+					expr += x[i][firstArcLastBundle][k];
+				}
+			}
+		}
+
+		cluster = bStat->clofbundle[ToPrevent[s].back()];
+		start   = cluster*(1 + 3*inst->m);
+		end     = (cluster + 1)*(1 + 3*inst->m);
+
+		/********** The last bundle can't start earlier then the main one **********/
+		for (int i = start; i < end; i++) {
+			double bundleStart = bStat->bundleStart[i] - mdist[i2][bStat->firstElement[i]];
+
+			if (bundleStart <= lastArcStartTime) {
+				for (int k1 = 0; k1 < bStat->arcV[lastArcStartTime][i].size(); k1++)
+				{
+					const int k = bStat->arcV[lastArcStartTime][i][k1];
+
+					expr += x[lastArcStartTime][i][k];
+				}
+			}
+		}
+
+		add(pdExpr + expr <= numEdges - 1);
+	}
+	ToPrevent.clear();
 
 	// for (int k = 0; k < ToPrevent.size(); k++) {
 

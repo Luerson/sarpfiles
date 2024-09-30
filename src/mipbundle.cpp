@@ -1264,7 +1264,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
             int v = bStat->vArcPlus[currSP][k][a].second;
 			exp += x[u][v][k];
 		}
-		sprintf (var, "Constraint3_%d", k);
+		sprintf (var, "Constraint2_%d", k);
 		IloRange cons = (exp == 1);
 		cons.setName(var);
 		model.add(cons);
@@ -1314,7 +1314,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
                 exp += x[u][v][k];
 			}
 		// }
-		sprintf (var, "Constraint4_%d", k);
+		sprintf (var, "Constraint3_%d", k);
 		IloRange cons = (exp == 1);
 		cons.setName(var);
 		model.add(cons);
@@ -1349,7 +1349,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 			}
 		}
 
-		sprintf (var, "Constraint5_%d", currParcel);
+		sprintf (var, "Constraint4_%d", currParcel);
 		IloRange cons = (exp <= 1);
 		cons.setName(var);
 		model.add(cons);
@@ -1402,7 +1402,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
                 // }
 			}
 
-			sprintf (var, "Constraint6_%d_%d", i, k);
+			sprintf (var, "Constraint5_%d_%d", i, k);
 			IloRange cons = (exp1 - exp2 == 0);
 			cons.setName(var);
 			model.add(cons);			
