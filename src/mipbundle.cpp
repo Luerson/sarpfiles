@@ -1101,13 +1101,13 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
     //     model.add(w[k]);
     // }
 
-    // IloBoolVarArray y(env, bStat->bundleVec.size());
+    IloBoolVarArray y(env, bStat->bundleVec.size());
 
-    // for (int k = 0; k < bStat->bundleVec.size(); k++){
-    //     sprintf(var, "y(%d)", k);
-    //     y[k].setName(var);
-    //     model.add(y[k]);
-    // }
+    for (int k = 0; k < bStat->bundleVec.size(); k++){
+        sprintf(var, "y(%d)", k);
+        y[k].setName(var);
+        model.add(y[k]);
+    }
 
     // // Variable start of service time dummy
 
@@ -1408,8 +1408,8 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 			model.add(cons);			
 		}
 	}
-    // getchar\(\);
 
+    // Parcel pickup and delivery should be in the same vehicle
     for (int i = 0; i < inst->m; i++){
 		for (int k = 0; k < inst->K; k++){
 			IloExpr exp1(env);
@@ -1423,21 +1423,8 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
                     int v = bStat->vArcPlus[h][k][a].second;
 
                     exp1 += x[u][v][k];
-
-                    // cout << "sequence " << k << ": ";
-
-                    // for (int a = 0; a < bStat->bundleVec[u].size(); a++) {
-                    //     cout << bStat->bundleVec[u][a] << " ";
-                    // }
-                    // cout << "- ";
-                    // for (int a = 0; a < bStat->bundleVec[v].size(); a++) {
-                    //     cout << bStat->bundleVec[v][a] << " ";
-                    // }
-                    // cout << endl;
                 }   
             }
-
-            // cout << "NOW THE DELIVERY" << endl;
 
             for (int p = 0; p < bStat->parcelBundleVec[i + inst->m].size(); p++) {
                 int h = bStat->parcelBundleVec[i + inst->m][p];
@@ -1514,29 +1501,29 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 	// 		model.add(cons);			
 	// }
 
-	// // Constraint 8 - service of pickup must come before the delivery
+	// Constraint 8 - service of pickup must come before the delivery
 
-	// for (int i = 0; i < inst->m; i++){
-	// 	IloExpr exp(env);
-    //     IloExpr exp2(env);
+	for (int i = 0; i < inst->m; i++){
+		IloExpr exp(env);
+        IloExpr exp2(env);
 
-    //     for (int a = 0; a < bStat->parcelBundleVec[i].size(); a++) {
-    //         int h = bStat->parcelBundleVec[i][a];
-    //         exp += b[h];
-    //     }
+        for (int a = 0; a < bStat->parcelBundleVec[i].size(); a++) {
+            int h = bStat->parcelBundleVec[i][a];
+            exp += b[h];
+        }
 
-    //     for (int a = 0; a < bStat->parcelBundleVec[i + inst->m].size(); a++) {
-    //         int h = bStat->parcelBundleVec[i + inst->m][a];
-    //         exp2 += b[h];
-    //     }
+        for (int a = 0; a < bStat->parcelBundleVec[i + inst->m].size(); a++) {
+            int h = bStat->parcelBundleVec[i + inst->m][a];
+            exp2 += b[h];
+        }
 
-	// 	sprintf (var, "Constraint8_%d", i);
-	// 	IloRange cons = (exp - exp2 <= 0);
-	// 	cons.setName(var);
-	// 	model.add(cons);
-	// }
+		sprintf (var, "Constraint8_%d", i);
+		IloRange cons = (exp - exp2 <= 0);
+		cons.setName(var);
+		model.add(cons);
+	}
 
-    // for (int i = 0; i < setP - inst->m; i++){
+    // for (int i = 0; i < setP; i++){
 	// 	IloExpr exp(env);
 	// 	exp = b[i];
 
@@ -1551,7 +1538,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 	// 	model.add(cons2);			
 	// }
 
-    // for (int i = setP - inst->m; i < bStat->bundleVec.size(); i++){
+    // for (int i = setP; i < bStat->bundleVec.size(); i++){
 	// 	IloExpr exp(env);
 	// 	exp = b[i];
 
@@ -1561,7 +1548,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 	// 	model.add(cons1);
 		
 	// 	sprintf (var, "Constraint12_%d", i);
-	// 	IloRange cons2 = (9 <= exp);
+	// 	IloRange cons2 = (0 <= exp);
 	// 	cons2.setName(var);
 	// 	model.add(cons2);			
 	// }
@@ -1871,6 +1858,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 	IloCplex bSARP(model);
 	bSARP.exportModel("bSARP.lp");
 	bSARP.setParam(IloCplex::Threads, threads);
+    // bSARP.setOut(env.getNullStream());
 
     bSARP.setParam(IloCplex::Param::TimeLimit, 7200);
     // bSARP.setParam(IloCplex::Param::TimeLimit, 10);
@@ -1887,6 +1875,8 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 
 	// cout << "\nSol status: " << bSARP.getStatus() << endl;
 	sStat->feasible = bSARP.isPrimalFeasible();
+
+    cout << inst->InstName << endl;
 
     // cout << "here" << endl;
     // getchar();

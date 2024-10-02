@@ -1,0 +1,622 @@
+sarp-7-6-B-2
+
+Sol status: Optimal
+ Tree_Size: 25511
+ Total Time: 24.12
+ LB: 52.218
+ UB: 52.2196
+
+Number of Vehicles: 3
+
+Solution: 
+Vehicle 0: 19 - 7 - 13 - 1 - 22 - Total time: 8.43333
+Vehicle 1: 20 - 8 - 14 - 9 - 15 - 10 - 16 - 5 - 23 - Total time: 6.85
+Vehicle 2: 21 - 11 - 17 - 12 - 6 - 18 - 2 - 0 - 3 - 4 - 24 - Total time: 5.93333
+
+
+Solution structure: 
+Vehicle 0: S - P - D - d - f
+Vehicle 1: S - P - D - P - D - P - D - d - f
+Vehicle 2: S - P - D - P - d - D - d - d - d - d - f
+
+sarp-7-5-C-1
+
+Sol status: Optimal
+ Tree_Size: 4239
+ Total Time: 3.82
+ LB: 88.983
+ UB: 88.9887
+
+Number of Vehicles: 3
+
+Solution: 
+Vehicle 0: 17 - 9 - 14 - 6 - 2 - 20 - Total time: 3.51667
+Vehicle 1: 18 - 10 - 4 - 5 - 15 - 7 - 12 - 11 - 16 - 1 - 8 - 13 - 3 - 21 - Total time: 7.45
+Vehicle 2: 19 - 0 - 22 - Total time: 4.68333
+
+
+Solution structure: 
+Vehicle 0: S - P - D - d - d - f
+Vehicle 1: S - P - d - d - D - P - D - P - D - d - P - D - d - f
+Vehicle 2: S - d - f
+
+sarp-6-8-B-2
+
+Sol status: Optimal
+ Tree_Size: 2385
+ Total Time: 3.47
+ LB: 52.311
+ UB: 52.313
+
+Number of Vehicles: 3
+
+Solution: 
+Vehicle 0: 22 - 7 - 15 - 8 - 16 - 3 - 0 - 25 - Total time: 5.43333
+Vehicle 1: 23 - 13 - 21 - 12 - 5 - 20 - 10 - 18 - 11 - 1 - 2 - 19 - 9 - 17 - 26 - Total time: 9.91667
+Vehicle 2: 24 - 4 - 6 - 14 - 27 - Total time: 9.16626
+
+
+Solution structure: 
+Vehicle 0: S - P - D - P - D - d - d - f
+Vehicle 1: S - P - D - P - d - D - P - D - P - d - d - D - P - D - f
+Vehicle 2: S - d - P - D - f
+
+sarp-5-6-C-1
+
+Sol status: Optimal
+ Tree_Size: 6018
+ Total Time: 3.1
+ LB: 87.078
+ UB: 87.0861
+
+Number of Vehicles: 2
+
+Solution: 
+Vehicle 0: 17 - 7 - 3 - 13 - 10 - 4 - 16 - 19 - Total time: 9.24472
+Vehicle 1: 18 - 1 - 8 - 14 - 9 - 15 - 6 - 2 - 12 - 0 - 5 - 11 - 20 - Total time: 9.91667
+
+
+Solution structure: 
+Vehicle 0: S - P - d - D - P - d - D - f
+Vehicle 1: S - d - P - D - P - D - P - d - D - d - P - D - f
+
+sarp-5-5-A-2
+
+Sol status: Optimal
+ Tree_Size: 305
+ Total Time: 0.17
+ LB: 21.838
+ UB: 21.838
+
+Number of Vehicles: 2
+
+Solution: 
+Vehicle 0: 15 - 9 - 14 - 7 - 12 - 6 - 11 - 1 - 17 - Total time: 9.41667
+Vehicle 1: 16 - 5 - 10 - 2 - 3 - 8 - 4 - 13 - 0 - 18 - Total time: 9.46667
+
+
+Solution structure: 
+Vehicle 0: S - P - D - P - D - P - D - d - f
+Vehicle 1: S - P - D - d - d - P - d - D - d - f
+
+sarp-8-6-B-1
+
+Sol status: Optimal
+ Tree_Size: 9441
+ Total Time: 15.92
+ LB: 53.427
+ UB: 53.4313
+
+Number of Vehicles: 4
+
+Solution: 
+Vehicle 0: 20 - 9 - 1 - 15 - 24 - Total time: 0.855691
+Vehicle 1: 21 - 7 - 3 - 11 - 17 - 25 - Total time: 9.91667
+Vehicle 2: 22 - 12 - 18 - 5 - 26 - Total time: 1.06667
+Vehicle 3: 23 - 8 - 14 - 13 - 19 - 4 - 10 - 2 - 0 - 16 - 6 - 27 - Total time: 6.55
+
+
+Solution structure: 
+Vehicle 0: S - P - d - D - f
+Vehicle 1: S - d - d - P - D - f
+Vehicle 2: S - P - D - d - f
+Vehicle 3: S - P - D - P - D - d - P - d - d - D - d - f
+
+sarp-8-5-C-1
+
+Sol status: Optimal
+ Tree_Size: 3709
+ Total Time: 7.81
+ LB: 114.736
+ UB: 114.736
+
+Number of Vehicles: 4
+
+Solution: 
+Vehicle 0: 18 - 3 - 9 - 2 - 14 - 22 - Total time: 4.59228
+Vehicle 1: 19 - 4 - 5 - 10 - 6 - 15 - 23 - Total time: 8.63211
+Vehicle 2: 20 - 8 - 13 - 12 - 0 - 7 - 17 - 24 - Total time: 9.91667
+Vehicle 3: 21 - 11 - 16 - 1 - 25 - Total time: 1.13333
+
+
+Solution structure: 
+Vehicle 0: S - d - P - d - D - f
+Vehicle 1: S - d - d - P - d - D - f
+Vehicle 2: S - P - D - P - d - d - D - f
+Vehicle 3: S - P - D - d - f
+
+sarp-5-5-B-2
+
+Sol status: Optimal
+ Tree_Size: 164
+ Total Time: 0.06
+ LB: 36.245
+ UB: 36.245
+
+Number of Vehicles: 2
+
+Solution: 
+Vehicle 0: 15 - 6 - 2 - 11 - 4 - 0 - 17 - Total time: 9.4
+Vehicle 1: 16 - 3 - 8 - 13 - 1 - 5 - 10 - 7 - 12 - 9 - 14 - 18 - Total time: 7.93699
+
+
+Solution structure: 
+Vehicle 0: S - P - d - D - d - d - f
+Vehicle 1: S - d - P - D - d - P - D - P - D - P - D - f
+
+sarp-6-9-A-2
+
+Sol status: Optimal
+ Tree_Size: 14044
+ Total Time: 21.38
+ LB: 39.6
+ UB: 39.6
+
+Number of Vehicles: 3
+
+Solution: 
+Vehicle 0: 24 - 14 - 3 - 23 - 9 - 18 - 8 - 17 - 1 - 7 - 16 - 0 - 27 - Total time: 8.88333
+Vehicle 1: 25 - 13 - 22 - 6 - 15 - 4 - 12 - 21 - 11 - 20 - 28 - Total time: 9.91667
+Vehicle 2: 26 - 5 - 10 - 19 - 2 - 29 - Total time: 8.88333
+
+
+Solution structure: 
+Vehicle 0: S - P - d - D - P - D - P - D - d - P - D - d - f
+Vehicle 1: S - P - D - P - D - d - P - D - P - D - f
+Vehicle 2: S - d - P - D - d - f
+
+sarp-5-9-B-2
+
+Sol status: Optimal
+ Tree_Size: 8090
+ Total Time: 8.4
+ LB: 46.178
+ UB: 46.1826
+
+Number of Vehicles: 2
+
+Solution: 
+Vehicle 0: 23 - 9 - 1 - 3 - 18 - 7 - 16 - 25 - Total time: 9.91667
+Vehicle 1: 24 - 0 - 2 - 13 - 22 - 6 - 15 - 12 - 4 - 21 - 8 - 17 - 5 - 14 - 11 - 20 - 10 - 19 - 26 - Total time: 6.77764
+
+
+Solution structure: 
+Vehicle 0: S - P - d - d - D - P - D - f
+Vehicle 1: S - d - d - P - D - P - D - P - d - D - P - D - P - D - P - D - P - D - f
+
+sarp-6-9-C-2
+
+Sol status: Optimal
+ Tree_Size: 24810
+ Total Time: 37.83
+ LB: 121.053
+ UB: 121.065
+
+Number of Vehicles: 3
+
+Solution: 
+Vehicle 0: 24 - 9 - 18 - 10 - 5 - 19 - 14 - 23 - 13 - 22 - 7 - 3 - 1 - 16 - 4 - 27 - Total time: 6.65
+Vehicle 1: 25 - 6 - 0 - 15 - 11 - 20 - 8 - 17 - 28 - Total time: 5.94512
+Vehicle 2: 26 - 12 - 2 - 21 - 29 - Total time: 9.91667
+
+
+Solution structure: 
+Vehicle 0: S - P - D - P - d - D - P - D - P - D - P - d - d - D - d - f
+Vehicle 1: S - P - d - D - P - D - P - D - f
+Vehicle 2: S - P - d - D - f
+
+sarp-5-7-B-1
+
+Sol status: Optimal
+ Tree_Size: 1011
+ Total Time: 0.51
+ LB: 53.698
+ UB: 53.698
+
+Number of Vehicles: 2
+
+Solution: 
+Vehicle 0: 19 - 7 - 14 - 3 - 11 - 18 - 6 - 0 - 4 - 13 - 10 - 17 - 21 - Total time: 4.95203
+Vehicle 1: 20 - 9 - 16 - 1 - 8 - 15 - 2 - 22 - Total time: 7.58333
+
+
+Solution structure: 
+Vehicle 0: S - P - D - d - P - D - P - d - d - D - P - D - f
+Vehicle 1: S - P - D - d - P - D - d - f
+
+sarp-6-7-B-2
+
+Sol status: Optimal
+ Tree_Size: 47247
+ Total Time: 61.17
+ LB: 46.692
+ UB: 46.6964
+
+Number of Vehicles: 3
+
+Solution: 
+Vehicle 0: 20 - 3 - 7 - 14 - 11 - 5 - 18 - 23 - Total time: 9.91667
+Vehicle 1: 21 - 10 - 17 - 4 - 9 - 16 - 6 - 0 - 13 - 24 - Total time: 9.91667
+Vehicle 2: 22 - 8 - 15 - 12 - 1 - 2 - 19 - 25 - Total time: 8.34187
+
+
+Solution structure: 
+Vehicle 0: S - d - P - D - P - d - D - f
+Vehicle 1: S - P - D - d - P - D - P - d - D - f
+Vehicle 2: S - P - D - P - d - d - D - f
+
+sarp-8-5-B-2
+
+Sol status: Optimal
+ Tree_Size: 16572
+ Total Time: 18.44
+ LB: 50.573
+ UB: 50.5774
+
+Number of Vehicles: 4
+
+Solution: 
+Vehicle 0: 18 - 6 - 1 - 22 - Total time: 7.33333
+Vehicle 1: 19 - 9 - 14 - 12 - 5 - 4 - 17 - 23 - Total time: 2.6122
+Vehicle 2: 20 - 11 - 16 - 10 - 15 - 24 - Total time: 9.91667
+Vehicle 3: 21 - 8 - 0 - 3 - 13 - 7 - 2 - 25 - Total time: 7.26667
+
+
+Solution structure: 
+Vehicle 0: S - d - d - f
+Vehicle 1: S - P - D - P - d - d - D - f
+Vehicle 2: S - P - D - P - D - f
+Vehicle 3: S - P - d - d - D - d - d - f
+
+sarp-8-6-C-1
+
+Sol status: Optimal
+ Tree_Size: 8339
+ Total Time: 11.69
+ LB: 82.465
+ UB: 82.4731
+
+Number of Vehicles: 4
+
+Solution: 
+Vehicle 0: 20 - 5 - 24 - Total time: 0.366667
+Vehicle 1: 21 - 13 - 4 - 6 - 19 - 12 - 2 - 18 - 8 - 14 - 0 - 25 - Total time: 8.3
+Vehicle 2: 22 - 9 - 15 - 10 - 1 - 3 - 16 - 26 - Total time: 8.17602
+Vehicle 3: 23 - 11 - 7 - 17 - 27 - Total time: 9.91667
+
+
+Solution structure: 
+Vehicle 0: S - d - f
+Vehicle 1: S - P - d - d - D - P - d - D - P - D - d - f
+Vehicle 2: S - P - D - P - d - d - D - f
+Vehicle 3: S - P - d - D - f
+
+sarp-5-6-B-2
+
+Sol status: Optimal
+ Tree_Size: 141
+ Total Time: 0.07
+ LB: 44.03
+ UB: 44.03
+
+Number of Vehicles: 2
+
+Solution: 
+Vehicle 0: 17 - 6 - 12 - 5 - 11 - 8 - 14 - 4 - 2 - 3 - 19 - Total time: 4.38333
+Vehicle 1: 18 - 7 - 0 - 13 - 1 - 10 - 16 - 9 - 15 - 20 - Total time: 9.91667
+
+
+Solution structure: 
+Vehicle 0: S - P - D - P - D - P - D - d - d - d - f
+Vehicle 1: S - P - d - D - d - P - D - P - D - f
+
+sarp-5-5-C-2
+
+Sol status: Optimal
+ Tree_Size: 832
+ Total Time: 0.22
+ LB: 56.244
+ UB: 56.244
+
+Number of Vehicles: 2
+
+Solution: 
+Vehicle 0: 15 - 3 - 7 - 12 - 9 - 14 - 17 - Total time: 9.91667
+Vehicle 1: 16 - 5 - 2 - 4 - 10 - 0 - 8 - 13 - 6 - 1 - 11 - 18 - Total time: 8.7378
+
+
+Solution structure: 
+Vehicle 0: S - d - P - D - P - D - f
+Vehicle 1: S - P - d - d - D - d - P - D - P - d - D - f
+
+sarp-6-9-A-1
+
+Sol status: Optimal
+ Tree_Size: 12241
+ Total Time: 15.93
+ LB: 29.925
+ UB: 29.927
+
+Number of Vehicles: 3
+
+Solution: 
+Vehicle 0: 24 - 8 - 17 - 13 - 22 - 10 - 19 - 2 - 11 - 20 - 5 - 6 - 15 - 27 - Total time: 8.11138
+Vehicle 1: 25 - 9 - 18 - 0 - 4 - 3 - 28 - Total time: 8.08333
+Vehicle 2: 26 - 7 - 16 - 1 - 12 - 21 - 14 - 23 - 29 - Total time: 9.91667
+
+
+Solution structure: 
+Vehicle 0: S - P - D - P - D - P - D - d - P - D - d - P - D - f
+Vehicle 1: S - P - D - d - d - d - f
+Vehicle 2: S - P - D - d - P - D - P - D - f
+
+sarp-5-6-B-1
+
+Sol status: Optimal
+ Tree_Size: 791
+ Total Time: 0.27
+ LB: 49.232
+ UB: 49.232
+
+Number of Vehicles: 2
+
+Solution: 
+Vehicle 0: 17 - 5 - 11 - 6 - 12 - 10 - 2 - 16 - 7 - 13 - 0 - 4 - 19 - Total time: 9.36667
+Vehicle 1: 18 - 1 - 9 - 3 - 15 - 8 - 14 - 20 - Total time: 9.91667
+
+
+Solution structure: 
+Vehicle 0: S - P - D - P - D - P - d - D - P - D - d - d - f
+Vehicle 1: S - d - P - d - D - P - D - f
+
+sarp-5-6-A-2
+
+Sol status: Optimal
+ Tree_Size: 1282
+ Total Time: 0.49
+ LB: 39.225
+ UB: 39.225
+
+Number of Vehicles: 2
+
+Solution: 
+Vehicle 0: 17 - 8 - 3 - 4 - 14 - 19 - Total time: 9.91667
+Vehicle 1: 18 - 7 - 13 - 2 - 5 - 1 - 11 - 6 - 12 - 0 - 10 - 16 - 9 - 15 - 20 - Total time: 9.91667
+
+
+Solution structure: 
+Vehicle 0: S - P - d - d - D - f
+Vehicle 1: S - P - D - d - P - d - D - P - D - d - P - D - P - D - f
+
+sarp-8-6-A-1
+
+Sol status: Optimal
+ Tree_Size: 2059
+ Total Time: 4.76
+ LB: 39.253
+ UB: 39.2565
+
+Number of Vehicles: 4
+
+Solution: 
+Vehicle 0: 20 - 10 - 16 - 1 - 24 - Total time: 8.66667
+Vehicle 1: 21 - 4 - 11 - 17 - 0 - 25 - Total time: 6.4
+Vehicle 2: 22 - 12 - 18 - 3 - 2 - 9 - 15 - 26 - Total time: 9.91667
+Vehicle 3: 23 - 8 - 5 - 14 - 13 - 19 - 7 - 6 - 27 - Total time: 6.35
+
+
+Solution structure: 
+Vehicle 0: S - P - D - d - f
+Vehicle 1: S - d - P - D - d - f
+Vehicle 2: S - P - D - d - d - P - D - f
+Vehicle 3: S - P - d - D - P - D - d - d - f
+
+sarp-9-6-B-2
+
+Sol status: Optimal
+ Tree_Size: 111365
+ Total Time: 177.49
+ LB: 51.159
+ UB: 51.164
+
+Number of Vehicles: 4
+
+Solution: 
+Vehicle 0: 21 - 5 - 10 - 16 - 13 - 19 - 9 - 15 - 12 - 18 - 14 - 0 - 20 - 25 - Total time: 9.84756
+Vehicle 1: 22 - 4 - 2 - 7 - 1 - 26 - Total time: 8.21667
+Vehicle 2: 23 - 3 - 6 - 27 - Total time: 8.75
+Vehicle 3: 24 - 11 - 17 - 8 - 28 - Total time: 9.05
+
+
+Solution structure: 
+Vehicle 0: S - d - P - D - P - D - P - D - P - D - P - d - D - f
+Vehicle 1: S - d - d - d - d - f
+Vehicle 2: S - d - d - f
+Vehicle 3: S - P - D - d - f
+
+sarp-7-6-B-1
+
+Sol status: Optimal
+ Tree_Size: 3462
+ Total Time: 4.91
+ LB: 43.261
+ UB: 43.261
+
+Number of Vehicles: 3
+
+Solution: 
+Vehicle 0: 19 - 11 - 5 - 17 - 9 - 4 - 15 - 7 - 13 - 22 - Total time: 9.91667
+Vehicle 1: 20 - 8 - 0 - 3 - 2 - 14 - 12 - 18 - 23 - Total time: 9.91667
+Vehicle 2: 21 - 10 - 6 - 1 - 16 - 24 - Total time: 7.12154
+
+
+Solution structure: 
+Vehicle 0: S - P - d - D - P - d - D - P - D - f
+Vehicle 1: S - P - d - d - d - D - P - D - f
+Vehicle 2: S - P - d - d - D - f
+
+sarp-6-7-B-1
+
+Sol status: Optimal
+ Tree_Size: 238
+ Total Time: 0.15
+ LB: 46.292
+ UB: 46.292
+
+Number of Vehicles: 3
+
+Solution: 
+Vehicle 0: 20 - 1 - 4 - 2 - 10 - 17 - 5 - 11 - 18 - 23 - Total time: 9.91667
+Vehicle 1: 21 - 24 - Total time: 0
+Vehicle 2: 22 - 7 - 14 - 0 - 8 - 15 - 6 - 13 - 12 - 3 - 19 - 9 - 16 - 25 - Total time: 9.91667
+
+
+Solution structure: 
+Vehicle 0: S - d - d - d - P - D - d - P - D - f
+Vehicle 1: S - f
+Vehicle 2: S - P - D - d - P - D - P - D - P - d - D - P - D - f
+
+sarp-10-5-A-2
+
+Sol status: Optimal
+ Tree_Size: 3052
+ Total Time: 6.88
+ LB: 39.703
+ UB: 39.703
+
+Number of Vehicles: 5
+
+Solution: 
+Vehicle 0: 20 - 5 - 10 - 15 - 4 - 25 - Total time: 6.31667
+Vehicle 1: 21 - 12 - 17 - 8 - 3 - 11 - 16 - 26 - Total time: 3.8435
+Vehicle 2: 22 - 2 - 1 - 27 - Total time: 7.56667
+Vehicle 3: 23 - 9 - 14 - 19 - 7 - 13 - 18 - 6 - 0 - 28 - Total time: 6.28333
+Vehicle 4: 24 - 29 - Total time: 0
+
+
+Solution structure: 
+Vehicle 0: S - d - P - D - d - f
+Vehicle 1: S - P - D - d - d - P - D - f
+Vehicle 2: S - d - d - f
+Vehicle 3: S - d - P - D - d - P - D - d - d - f
+Vehicle 4: S - f
+
+sarp-5-7-C-2
+
+Sol status: Optimal
+ Tree_Size: 8483
+ Total Time: 3.96
+ LB: 74.621
+ UB: 74.6257
+
+Number of Vehicles: 1
+
+Solution: 
+Vehicle 0: 19 - 9 - 16 - 2 - 5 - 0 - 12 - 7 - 14 - 8 - 15 - 4 - 1 - 10 - 17 - 11 - 18 - 3 - 6 - 13 - 20 - Total time: 9.91667
+
+
+Solution structure: 
+Vehicle 0: S - P - D - d - P - d - D - P - D - P - D - d - d - P - D - P - D - d - P - D - f
+
+sarp-5-8-C-2
+
+Sol status: Optimal
+ Tree_Size: 505
+ Total Time: 0.36
+ LB: 90.377
+ UB: 90.377
+
+Number of Vehicles: 2
+
+Solution: 
+Vehicle 0: 21 - 7 - 15 - 5 - 1 - 13 - 9 - 2 - 17 - 23 - Total time: 9.91667
+Vehicle 1: 22 - 6 - 14 - 11 - 0 - 19 - 3 - 10 - 18 - 8 - 4 - 16 - 12 - 20 - 24 - Total time: 9.91667
+
+
+Solution structure: 
+Vehicle 0: S - P - D - P - d - D - P - d - D - f
+Vehicle 1: S - P - D - P - d - D - d - P - D - P - d - D - P - D - f
+
+sarp-6-7-A-2
+
+Sol status: Optimal
+ Tree_Size: 200
+ Total Time: 0.13
+ LB: 36.401
+ UB: 36.401
+
+Number of Vehicles: 3
+
+Solution: 
+Vehicle 0: 20 - 11 - 4 - 18 - 7 - 14 - 3 - 23 - Total time: 6.95
+Vehicle 1: 21 - 5 - 10 - 1 - 17 - 6 - 2 - 13 - 8 - 15 - 24 - Total time: 9.91667
+Vehicle 2: 22 - 0 - 12 - 19 - 9 - 16 - 25 - Total time: 5.48374
+
+
+Solution structure: 
+Vehicle 0: S - P - d - D - P - D - d - f
+Vehicle 1: S - d - P - d - D - P - d - D - P - D - f
+Vehicle 2: S - d - P - D - P - D - f
+
+sarp-5-7-B-2
+
+Sol status: Optimal
+ Tree_Size: 1216
+ Total Time: 1.84
+ LB: 54.697
+ UB: 54.697
+
+Number of Vehicles: 2
+
+Solution: 
+Vehicle 0: 19 - 6 - 3 - 13 - 0 - 4 - 1 - 8 - 15 - 10 - 17 - 9 - 16 - 21 - Total time: 9.91667
+Vehicle 1: 20 - 7 - 14 - 11 - 18 - 2 - 5 - 12 - 22 - Total time: 9.91667
+
+
+Solution structure: 
+Vehicle 0: S - P - d - D - d - d - d - P - D - P - D - P - D - f
+Vehicle 1: S - P - D - P - D - d - P - D - f
+
+sarp-8-6-C-2
+
+Sol status: Optimal
+ Tree_Size: 3315
+ Total Time: 5.39
+ LB: 105.982
+ UB: 105.986
+
+Number of Vehicles: 4
+
+Solution: 
+Vehicle 0: 20 - 6 - 11 - 5 - 17 - 8 - 3 - 14 - 7 - 10 - 16 - 24 - Total time: 9.91667
+Vehicle 1: 21 - 12 - 2 - 18 - 1 - 25 - Total time: 5.41667
+Vehicle 2: 22 - 26 - Total time: 0
+Vehicle 3: 23 - 13 - 4 - 19 - 0 - 9 - 15 - 27 - Total time: 9.91667
+
+
+Solution structure: 
+Vehicle 0: S - d - P - d - D - P - d - D - d - P - D - f
+Vehicle 1: S - P - d - D - d - f
+Vehicle 2: S - f
+Vehicle 3: S - P - d - D - d - P - D - f
+
