@@ -42,4 +42,12 @@ void addArcsToCustomerPickup (int i, instanceStat *inst, nodeArcsStruct *nas, pr
 void addArcsToDummyFromDepot (int i, instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist);
 void addArcsToCustomerDelivery (int i, instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist);
 
+void removeArcsToTheSameNode (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist);
+void removeDeliveryToItsPickup (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist);
+
+void fillInfoDepotToDummy (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist);
+void fillInfoToDummy (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist);
+void fillInfoFromDepot (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist);
+void fillInfoRequests (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist);
+
 #endif

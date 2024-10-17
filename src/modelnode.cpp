@@ -72,13 +72,13 @@ void addArcsToCustomerDelivery (int i, instanceStat *inst, nodeArcsStruct *nas, 
     int auxK;
 
     int fDepot = 2*inst->n + 2*inst->m;
-    int CdIndex = inst->n;
-    int PpIndex = 2*inst->n;
+    int CdBegin = inst->n;
+    int CdEnd = 2*inst->n;
 
     int decimalPlaces = 4;
     double multiplier = std::pow(10, decimalPlaces);
 
-    for (int j = CdIndex; j < PpIndex; j++){ //j is a customer pickup node
+    for (int j = CdBegin; j < CdEnd; j++){ //j is a customer delivery node
         double ttij = mdist[i][j]/inst->vmed;
         ttij = std::round(ttij * multiplier) / multiplier;
 
@@ -107,36 +107,121 @@ void addArcsToDummy (int i, instanceStat *inst, nodeArcsStruct *nas, probStat* p
     }
 }
 
-// From request (or depot) to request
-// nas->fArc.first = i;
-// nas->fArc.second = j;
-// nas->arcMinus[j].push_back(nas->fArc);
-// nas->arcPlus[i].push_back(nas->fArc);
-// nas->allArcs.push_back(nas->fArc);
+void removeArcsToTheSameNode (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
 
-// nas->arcnf.push_back(nas->fArc);
-// for (int k = 0; k < inst->K; k++) {
-//     nas->arcV[i][j].push_back(auxK);
-// }
+    for (int i = 0; i < nodeVec.size(); i++){//j is the dummy node
+        nas->arcs[i][i] = false;
+    }
+}
 
-// Depot to dummy
-// nas->fArc.first = i;
-// nas->fArc.second = l;
-// nas->arcMinus[l].push_back(nas->fArc);
-// nas->arcPlus[i].push_back(nas->fArc);
-// nas->allArcs.push_back(nas->fArc);
-// auxK = l - inst->V;
-// nas->arcV[i][l].push_back(auxK);
+void removeDeliveryToItsPickup (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
 
-// Any arc to dummy
-// nas->fArc.first = i;
-// nas->fArc.second = j;
-// nas->arcMinus[j].push_back(nas->fArc);
-// nas->arcPlus[i].push_back(nas->fArc);
+    int CDBegin = inst->n;
+    int CDEnd   = CDBegin + inst->n;
+    int PDBegin = CDEnd + inst->m;
+    int PDEnd   = PDBegin + inst->m;
 
-// nas->allArcs.push_back(nas->fArc);
-// auxK = j - inst->V;
-// nas->arcV[i][j].push_back(auxK);
+    for (int i = CDBegin; i < CDEnd; i++) {
+        nas->arcs[i][i-inst->n] = false;
+    }
+
+    for (int i = PDBegin; i < PDEnd; i++){//j is the dummy node
+        nas->arcs[i][i-inst->m] = false;
+    }
+}
+
+void fillInfoDepotToDummy (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
+
+    int fDepot = inst->V - inst->K;
+    int i, l;
+
+    for (int k = 0; k < inst->K; k++) {
+        i = k + fDepot;
+        l = i + inst->K;
+
+        if (!nas->arcs[i][l]) {
+            continue;
+        }
+
+        nas->fArc.first = i;
+        nas->fArc.second = l;
+        nas->arcMinus[l].push_back(nas->fArc);
+        nas->arcPlus[i].push_back(nas->fArc);
+        nas->allArcs.push_back(nas->fArc);
+        nas->arcV[i][l].push_back(k);
+    }
+}
+
+void fillInfoToDummy (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
+
+    int fDepot = inst->V - inst->K;
+
+    for (int i = 0; i < fDepot; i++) {
+        for (int k = 0; k < inst->K; k++) {
+            int j = k + inst->V;
+
+            if (!nas->arcs[i][j]) {
+                continue;
+            }
+
+            nas->fArc.first = i;
+            nas->fArc.second = j;
+            nas->arcMinus[j].push_back(nas->fArc);
+            nas->arcPlus[i].push_back(nas->fArc);
+
+            nas->allArcs.push_back(nas->fArc);
+            nas->arcV[i][j].push_back(k);
+        }
+    }
+}
+
+void fillInfoFromDepot (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
+
+    int fDepot = inst->V - inst->K;
+
+    for (int k = 0; k < inst->K; k++) {
+        for (int j = 0; j < fDepot; j++) {
+            int i = k + fDepot;
+
+            if (!nas->arcs[i][j]) {
+                continue;
+            }
+
+            nas->fArc.first = i;
+            nas->fArc.second = j;
+            nas->arcMinus[j].push_back(nas->fArc);
+            nas->arcPlus[i].push_back(nas->fArc);
+
+            nas->allArcs.push_back(nas->fArc);
+            nas->arcV[i][j].push_back(k);
+        }
+    }
+}
+
+void fillInfoRequests (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
+
+    int fDepot = inst->V - inst->K;
+
+    for (int i = 0; i < fDepot; i++) {
+        for (int j = 0; j < fDepot; j++) {
+
+            if (!nas->arcs[i][j]) {
+                continue;
+            }
+
+            nas->fArc.first = i;
+            nas->fArc.second = j;
+            nas->arcMinus[j].push_back(nas->fArc);
+            nas->arcPlus[i].push_back(nas->fArc);
+            nas->allArcs.push_back(nas->fArc);
+
+            nas->arcnf.push_back(nas->fArc);
+            for (int k = 0; k < inst->K; k++) {
+                nas->arcV[i][j].push_back(k);
+            }
+        }
+    }
+}
 
 
 void initArcs (instanceStat *inst, nodeArcsStruct *nas){
@@ -212,7 +297,7 @@ void feasibleArcs (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, v
         addArcsToDummy(i, inst, nas, problem, nodeVec, mdist);
     }
 
-    for (int i = inst->n; i < inst->n + inst->m; i++){//i is a parcel node           
+    for (int i = 2*inst->n; i < 2*inst->n + 2*inst->m; i++){//i is a parcel node           
         addArcsToParcelPickup(i, inst, nas, problem, nodeVec, mdist);
         addArcsToParcelDelivery(i, inst, nas, problem, nodeVec, mdist);
         addArcsToCustomerPickup(i, inst, nas, problem, nodeVec, mdist);
@@ -220,15 +305,19 @@ void feasibleArcs (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, v
     }
 
     // Parcel delivery should also go to the dummy
-    for (int i = inst->n; i < 2*inst->n; i++){//i is a passenger delivery node
+    for (int i = 2*inst->n + inst->n; i < 2*inst->n + 2*inst->m; i++){//i is a passenger delivery node
         addArcsToDummy(i, inst, nas, problem, nodeVec, mdist);
     }
 
     // Arcs that are never allowed
-    // removeArcsToTheSameNode(inst, nas, problem, nodeVec, mdist);
-    // removeDeliveryToItsPickup(inst, nas, problem, nodeVec, mdist);
-    // removeDepotInWrongRoutes(inst, nas, problem, nodeVec, mdist);
+    removeArcsToTheSameNode(inst, nas, problem, nodeVec, mdist);
+    removeDeliveryToItsPickup(inst, nas, problem, nodeVec, mdist);
     /*---------------------------------------------------*/
+
+    fillInfoDepotToDummy(inst, nas, problem, nodeVec, mdist);
+    fillInfoToDummy(inst, nas, problem, nodeVec, mdist);
+    fillInfoFromDepot(inst, nas, problem, nodeVec, mdist);
+    fillInfoRequests(inst, nas, problem, nodeVec, mdist);
 
     for (int a = 0; a < nas->allArcs.size(); a++){
         int i = nas->allArcs[a].first;
@@ -236,9 +325,7 @@ void feasibleArcs (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, v
 
         for(int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
             int k = nas->arcV[i][j][k1];
-            // if (i < inst->n) {
-            //     cout << i << " " << j << " " << k << endl;
-            // }
+        
             nas->vArcPlus[i][k].push_back(nas->allArcs[a]);
             nas->vArcMinus[j][k].push_back(nas->allArcs[a]);
         }
@@ -993,16 +1080,20 @@ void viewSol (instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, sol
             for (int i = 0; i < sStat->solOrder[k].size(); i++){
                 if (i < sStat->solOrder[k].size() - 1){
                     if (sStat->solOrder[k][i] < inst->n){
-                        cout  << "d" << " - ";
+                        cout  << "p" << " - ";
                     }
-                    else if (sStat->solOrder[k][i] < inst->n + inst->m){
+                    else if (sStat->solOrder[k][i] < 2*inst->n){
+                        cout  << "d" << " - ";
+                        sStat->servedParcels++;
+                    }
+                    else if (sStat->solOrder[k][i] < 2*inst->n + inst->m){
                         cout  << "P" << " - ";
                         sStat->servedParcels++;
                     }
-                    else if (sStat->solOrder[k][i] < inst->n + 2*inst->m){
+                    else if (sStat->solOrder[k][i] < 2*inst->n + 2*inst->m){
                         cout  << "D" << " - ";
                     }
-                    else if (sStat->solOrder[k][i] < inst->n + 2*inst->m + inst->K){
+                    else if (sStat->solOrder[k][i] < 2*inst->n + 2*inst->m + inst->K){
                         cout  << "S" << " - ";
                     }                                      
                 }
@@ -1744,16 +1835,16 @@ void nodeMethod (nodeStat *node, instanceStat *inst, double **mdist, vector<node
 	if(sStat->feasible){
 
 		viewSol (inst, mdist, nodeVec, sStat);
-		mipSolStats (inst, mdist, nodeVec, sStat);
+		// mipSolStats (inst, mdist, nodeVec, sStat);
 
-		printStats(inst, sStat);
+		// printStats(inst, sStat);
 
-        if (inst->preInst == 1) {
-            output(inst, nodeVec,  sStat, problem);
+        // if (inst->preInst == 1) {
+        //     output(inst, nodeVec,  sStat, problem);
 
 
 
-        }
+        // }
 	}
     
 	for ( int i = 0; i < inst->V + inst->dummy; i++) {

@@ -156,6 +156,18 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     }
     /*---------------------------------------------------*/
 
+    // Calcula a matriz de distâncias
+    /*---------------------------------------------------*/
+    double **dist = new double*[full];
+    for (int i= 0; i < full; i++){
+        dist[i] = new double [full];
+    }
+
+    calcDistCsarp(dist, full, V, vxs, vys, vxf, vyf, inst->instType);
+    calcDistGhsarp(dist, full, V, vxs, vys, vxf, vyf, inst->instType);
+    calcDistSfsarp(dist, full, V, vxs, vys, vxf, vyf, inst->instType);
+    /*---------------------------------------------------*/
+    
 
     // Calculando os profits de cada nó
     /*---------------------------------------------------*/
@@ -168,7 +180,7 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     for (int i = 0; i < full; i++){
         delta[i] = service/double(60);
         if (i < n){ 
-            mandist = CalcMan(vxs, vys, vxs, vys, i, i+n); 
+            mandist = dist[i][i+n]; 
             profit[i] = inst->minpas + inst->paskm*mandist;
         }
         else if (i < R){ 
@@ -176,7 +188,7 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
                 profit[i] = 0;
             }
             else {
-                mandist = CalcMan(vxs, vys, vxs, vys, i, i+m);
+                mandist = dist[i][i+m];
                 profit[i] =  inst->minpar + inst->parkm*mandist;
             }
         }
@@ -188,16 +200,11 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     /*---------------------------------------------------*/
 
 
-    // Calcula a matriz de distâncias
+    // Folgar a janela de tempo do delivery
     /*---------------------------------------------------*/
-    double **dist = new double*[full];
-    for (int i= 0; i < full; i++){
-        dist[i] = new double [full];
+    for (int i = n; i < 2*n; i++) {
+        vl[i] = inst->T*60;
     }
-
-    calcDistCsarp(dist, full, V, vxs, vys, vxf, vyf, inst->instType);
-    calcDistGhsarp(dist, full, V, vxs, vys, vxf, vyf, inst->instType);
-    calcDistSfsarp(dist, full, V, vxs, vys, vxf, vyf, inst->instType);
     /*---------------------------------------------------*/
 
 
@@ -275,7 +282,7 @@ void tightWindowDETOUR1(double **dist, int n, int m, vector<double> &ve, vector<
     if (instModel != "DETOUR1") {
         return;
     }
-    
+
     for (int i = n; i < 2*n; i++){
         ve[i] = ve[i-n] + dist[i-n][i]/kmPerMin + double(5);
 
@@ -314,7 +321,7 @@ void calcDistCsarp(double **dist, int full, int V, const vector<double> &vxs, co
 }
 
 void calcDistGhsarp(double **dist, int full, int V, const vector<double> &vxs, const vector<double> &vys, const vector<double> &vxf, const vector<double> &vyf, string instType) {
-    if (instType != "csarp") {
+    if (instType != "ghsarp") {
         return;
     }
 
@@ -335,7 +342,7 @@ void calcDistGhsarp(double **dist, int full, int V, const vector<double> &vxs, c
 }
 
 void calcDistSfsarp(double **dist, int full, int V, const vector<double> &vxs, const vector<double> &vys, const vector<double> &vxf, const vector<double> &vyf, string instType) {
-    if (instType != "csarp") {
+    if (instType != "sf_data") {
         return;
     }
 
