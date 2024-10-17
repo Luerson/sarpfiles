@@ -57,7 +57,8 @@ struct bundleStat{
 	vector< vector<int> > vecofDL;
 	vector< vector<int> > cBundles;
 
-	
+	vector<double> e;
+	vector<double> l;
 };
 
 struct clSt{

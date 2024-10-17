@@ -24,8 +24,6 @@ void solStatIni(solStats *sStat){
 
     sStat->pProfit = 0;
     sStat->costs = 0;
-
-    // sStat->solvec.clear();
 }
 
 void fipStatIni(fipStats *fipStat){

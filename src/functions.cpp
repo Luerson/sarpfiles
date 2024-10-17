@@ -58,13 +58,13 @@ double calcEucDist (vector<double> &Xs, vector<double> &Ys, vector<double> &Xf, 
     return sqrt(pow(Xf[I] - Xs[J], 2) + pow(Yf[I] - Ys[J], 2));
 }
 
-double calcEucDist2 (vector<double> &Xs, vector<double> &Ys, vector<double> &Xf, vector<double> &Yf, int I, int J){
+double calcEucDist2 (const vector<double> &Xs, const vector<double> &Ys, const vector<double> &Xf, const vector<double> &Yf, int I, int J){
     double a = pow(Xf[I] - Xs[J], 2);
     double b = pow(Yf[I] - Ys[J], 2);
     return floor(sqrt(a + b)*10)/10;
 }
 
-double CalcMan (vector<double> &Xs, vector<double> &Ys, vector<double> &Xf, vector<double> &Yf, int I, int J){
+double CalcMan (const vector<double> &Xs, const vector<double> &Ys, const vector<double> &Xf, const vector<double> &Yf, int I, int J){
     return abs(Xf[I] - Xs[J]) + abs(Yf[I] - Ys[J]);
 }
 
@@ -153,6 +153,13 @@ string getInstName (char **argv){
     return InstanceName;
 }
 
+string getInstModel (char **argv){
+
+    string instModel(argv[2]);
+
+    return instModel;
+}
+
 void getInstParam (instanceStat *inst, vector<int> &instParam){
 
     string::size_type loc = inst->InstName.find_first_of("-");
@@ -171,140 +178,11 @@ void getInstParam (instanceStat *inst, vector<int> &instParam){
     instParam.push_back(stoi(param2));
 }
 
-// OBS: DESCRIPTION
-    // bundle2: execute only bundles without selection
-    // bundle3: execute mono insertion bundlefip without selection
-    // bundle4: execute multi insertion bundlefip without selection
-    // bundle5: execute only bundle with profit based selection
-    // bundle6: execute only bundle with priority based selection
-    // bundle7: execute multi insertion bundlefip with profit based selection
-    // bundle8: execute multi insertion bundlefip with priority based selection
 void solveselect(nodeStat *node, instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, probStat* problem, solStats *sStat){
 
     if (problem->model == "node"){
         nodeMethod(node, inst, mdist, nodeVec, problem, sStat);
     }
-
-    else if (problem->model == "nodefip"){
-        fipnodeMethod(node, inst, mdist, nodeVec, problem, sStat);
-    }
-
-    else if (problem->model == "bundle"){
-        bundleMethod(node, inst, mdist, nodeVec, problem, sStat);
-    }
-
-    else if (problem->model == "bundle2"){
-        bundleMethod2(node, inst, mdist, nodeVec, problem, sStat);
-    }
-
-    else if (problem->model == "bundle3"){
-        bundleMethod2(node, inst, mdist, nodeVec, problem, sStat);
-    }
-
-    else if (problem->model == "bundle4"){
-        // bundleMethod2(node, inst, mdist, nodeVec, problem, sStat);
-        fipnodeMethod(node, inst, mdist, nodeVec, problem, sStat);
-    }
-
-    else if (problem->model == "bundle5"){
-        bundleMethod2(node, inst, mdist, nodeVec, problem, sStat);
-    }
-
-    else if (problem->model == "bundle6"){
-        bundleMethod2(node, inst, mdist, nodeVec, problem, sStat);
-    }
-
-    else if (problem->model == "fip"){
-        fipMethod(node, inst, mdist, nodeVec, problem, sStat);
-
-    }
-
-    // else if (problem->model == "arcbundle") {
-    //     arcBundleMethod(node, inst, mdist, nodeVec, problem, sStat);
-    // }
-    // else if (){
-
-    // }
-
-    else if (problem->model == "math"){
-        // h.orderRequests(&inst, nodeVec, distMatrix, &problem);
-        // h.buildDistVec(&inst, nodeVec, distMatrix, &problem);
-        // h.buildBundles(&inst, nodeVec, distMatrix, &problem);
-        // h.orgBundles(&inst, nodeVec, distMatrix, bStat, &problem);
-        // h.hbundleMethod(&inst, nodeVec, distMatrix, &problem, &sStat);
-    }
-
-    else if (problem->model == "mio"){
-        
-    }
-
-    else if (problem->model == "ils"){
-        // h.orderRequests(&inst, nodeVec, distMatrix, &problem);
-        // h.buildDistVec(&inst, nodeVec, distMatrix, &problem);
-        // h.buildBundles(&inst, nodeVec, distMatrix, &problem);
-        // h.orgBundles(&inst, nodeVec, distMatrix, bStat, &problem);
-        // sCon.ConstrProc(&inst, nodeVec, distMatrix, &problem);
-
-        // clock_t seed = (argc == 5) ? time(NULL) : strtol(argv[4], NULL, 10);
-        sarpILS sILS;
-
-        clock_t seed = 1642521807;
-        srand(seed);
-
-
-        // TODO UNCOMMENT //  << "\n\nSeed: " << std::setprecision(5) << seed << endl << endl;
-        // getchar();
-        // t1 = sILS.get_wall_time();
-        sILS.stats.setStart();
-
-        sILS.ILS(inst, nodeVec, mdist, problem);
-
-        // t2 = sILS.get_wall_time();
-        // deltaT = t2 - t1;
-
-        sILS.stats.setEnd();
-
-        // TODO UNCOMMENT //  << "\nTotal Run Time: " << std::setprecision(8) <<  sILS.stats.printTime() << endl;
-
-        // TODO UNCOMMENT //  << "END OF METHOD" << endl;
-        // sILS.function();
-    }
-    // else if (problem.model == "twostage"){
-    // 	twoStageMethod(&node, &inst, distMatrix, nodeVec, &problem, &sStat);			
-    // }
-
-    // if (problem.scen == "PC"){
-    // 	if (trialMulti > 1){
-    // 		// if (trialK < inst.n + inst.m){
-    // 		if (trialK < inst.n){
-    // 			trialK++;	
-    // 		}
-
-    // 		else{
-    // 			break;
-    // 		}
-    // 	}
-    // 	else {
-    // 		trialMulti = 1.5;
-    // 	}
-    // }
-
-    // else{
-    // 	if (trialMulti > 1){
-    // 		if (trialK < inst.n){
-    // 			trialK++;	
-    // 		}
-
-    // 		else{
-    // 			break;
-    // 		}
-    // 	}
-    // 	else {
-    // 		trialMulti = 1.5;
-    // 	}	
-    // }
-    
-// }
 }
 
 int permutationCount = 0;

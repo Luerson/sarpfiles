@@ -27,6 +27,10 @@
 
 using namespace std;
 
-void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector<nodeStat> &nodeVec, double ***Mdist, probStat* problem, int trialK, double trialMulti);
+void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector<nodeStat> &nodeVec, double ***Mdist, probStat* problem);
+void calcDistCsarp(double **dist, int full, int V, const vector<double> &vxs, const vector<double> &vys, const vector<double> &vxf, const vector<double> &vyf, string instType);
+void calcDistGhsarp(double **dist, int full, int V, const vector<double> &vxs, const vector<double> &vys, const vector<double> &vxf, const vector<double> &vyf, string instType);
+void calcDistSfsarp(double **dist, int full, int V, const vector<double> &vxs, const vector<double> &vys, const vector<double> &vxf, const vector<double> &vyf, string instType);
+void tightWindowDETOUR1(double **dist, int n, int m, vector<double> &ve, vector<double> &vl, double kmPerMin, string instModel);
 
 #endif

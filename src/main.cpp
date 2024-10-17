@@ -38,57 +38,14 @@ int main (int argc, char *argv[]) {
 	probStat problem;
 	solStats sStat;
 	vector<nodeStat> nodeVec;
-
-
+	
 	sStat.feasible = false;
 	
-	//while (!sStat.feasible){
-		nodeVec.clear();
+	nodeVec.clear();
 
-		readData(argc, argv, &node, &inst, nodeVec, &distMatrix, &problem, trialK, trialMulti); 
-		
-		hbundle h(&inst);
-		
-		//startPermutation(&inst, distMatrix, nodeVec);
+	readData(argc, argv, &node, &inst, nodeVec, &distMatrix, &problem); 
 
-		// cout << "Dist Matrix: " << endl;
-		// for (int i = 0; i < inst.V + inst.dummy; i++){
-		//     for (int j = 0; j < inst.V + inst.dummy; j++){
-		//         cout << setw(10) << distMatrix[i][j] << " ";
-		//     }
-		//     cout << endl;
-		// }
-
-		//getchar();
-		solveselect(&node, &inst, distMatrix, nodeVec, &problem, &sStat);
-
-
-
-		// if (problem.scen == "PC"){
-		// 	nodeVec.clear();
-		// 	sStat.solvec.clear();
-		// 	sStat.solBegin.clear();
-		// 	sStat.feasible = false;
-		// 	if (inst.min == true){
-		// 		// if (trialK < inst.n + inst.m){
-		// 		// 	trialK++;
-		// 		// }
-
-		// 		readData(argc, argv, &node, &inst, nodeVec, &distMatrix, &problem, trialK, trialMulti);
-
-		// 		if (problem.model == "node"){
-		// 			nodeMethod(&node, &inst, distMatrix, nodeVec, &problem, &sStat);
-
-		// 		}
-		// 		else if (problem.model == "bundle"){
-		// 			bundleMethod(&node, &inst, distMatrix, nodeVec, &problem, &sStat);
-		// 		}
-		// 		inst.min = false;
-		// 	}
-		// }
-	//	trialK++;
-	//	cout << "trial K: " << trialK << endl;
-	//}
+	solveselect(&node, &inst, distMatrix, nodeVec, &problem, &sStat);
 
 	return 0;
 }

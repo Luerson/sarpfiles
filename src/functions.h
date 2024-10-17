@@ -32,14 +32,15 @@ using namespace std;
 
 void distScale(instanceStat *inst, int *instV, vector <vector <double> > &tempData, double *curAvg, int *scale);
 double calcEucDist (vector<double> &Xs, vector<double> &Ys, vector<double> &Xf, vector<double> &Yf, int I, int J);
-double calcEucDist2 (vector<double> &Xs, vector<double> &Ys, vector<double> &Xf, vector<double> &Yf, int I, int J);
-double CalcMan (vector<double> &Xs, vector<double> &Ys, vector<double> &Xf, vector<double> &Yf, int I, int J);
+double calcEucDist2 (const vector<double> &Xs, const vector<double> &Ys, const vector<double> &Xf, const vector<double> &Yf, int I, int J);
+double CalcMan (const vector<double> &Xs, const vector<double> &Ys, const vector<double> &Xf, const vector<double> &Yf, int I, int J);
 double valRound(double value);
 double timeRound(double value);
 double CalcLatLong (vector<double> &Xs, vector<double> &Ys, vector<double> &Xf, vector<double> &Yf, int n, double *slatit, double* slongit, double *flatit, double* flongit);
 double CalcDistGeo (double *slatit, double* slongit, double *flatit, double* flongit, int I, int J);
 string getInstanceType (char **argv);
 string getInstName (char **argv);
+string getInstModel (char **argv);
 void getInstParam (instanceStat *inst, vector<int> &instParam);
 void solveselect(nodeStat *node, instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, probStat* problem, solStats *sStat);
 int testDurations(int a, int b, int c, instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec);

@@ -49,7 +49,8 @@ struct instanceStat{
     int m;
     int K;
     //double T = 24;
-    double T = 24;
+    double T = 19;
+	double B = 9;
 
     int V;
     //double maxTime = 8;
@@ -71,6 +72,7 @@ struct instanceStat{
 	bool preInst;
 	string InstName;
 	string instType;
+	string instModel;
 
 	double discpas = 3.24; //discount value for passenger detour (fip/osarp); gamma4 (same value as minpas'alpha')
 
