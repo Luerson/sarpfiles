@@ -229,6 +229,16 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
             else{
                 node->load2 = 0;
             }    
+
+            if (i >= 2*n && i < 2*n + m){
+                node->parcelLoad = 1;
+            }
+            else if (i >= 2*n + m && i < 2*n + 2*m){
+                node->parcelLoad = -1;
+            }
+            else{
+                node->parcelLoad = 0;
+            }   
                         
             node->e = ve[i]/60;
 

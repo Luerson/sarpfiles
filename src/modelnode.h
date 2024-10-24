@@ -50,4 +50,8 @@ void fillInfoToDummy (instanceStat *inst, nodeArcsStruct *nas, probStat* problem
 void fillInfoFromDepot (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist);
 void fillInfoRequests (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist);
 
+void obligueDirectCustomer (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, const double **mdist);
+void limitParcelCapacity (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist);
+void limitCustomerCapacity (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist);
+
 #endif

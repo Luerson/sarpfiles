@@ -14,7 +14,7 @@ void mipnode(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 	//long M = 10*inst->T;
 	long M2 = 2*(inst->n + inst->m + 1);
 	long W = inst->m + 1;
-	int Q;
+	int Q = 1;
 
     int fDepot = 2*inst->n + 2*inst->m;
     int fDummy = 2*inst->n + 2*inst->m + inst->K;
@@ -24,24 +24,6 @@ void mipnode(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 
 	vector< pair<int, int> > auxPairVec;
 	pair<int, int> auxPair;
-
-	if (problem->p2 < 1){ //single parcel setting
-		Q = 1;
-	}
-	else{
-		Q = inst->m;
-	}
-	// for (int i = 0; i < nodeVec.size(); i++) {
-	// 	cout << nodeVec[i].load << " ";
-	// }
-	// cout << endl;
-
-	//// TODO UNCOMMENT //  << "Printing node vec: " << endl;
-	//for (int i = 0; i < nodeVec.size(); i++){
-	//	// TODO UNCOMMENT //  << i << ": " << nodeVec[i].e << " - " << nodeVec[i].l << endl;
-	//}
-	//// TODO UNCOMMENT //  << endl;
-	//getchar();
 
 	//Creating variables
 	IloArray <IloArray <IloBoolVarArray> > x(env, nodeVec.size());
@@ -316,6 +298,30 @@ void mipnode(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 	// 	cons1.setName(var);
 	// 	model.add(cons1);
 	// }
+
+	// //Constraints 10 - parcel load constraints
+	for (int a = 0; a < nas->allArcs.size(); a++){
+		
+		IloExpr exp(env);
+		IloExpr exp2(env);
+		IloExpr sumX(env);
+        int i = nas->allArcs[a].first;
+        int j = nas->allArcs[a].second;
+
+        for (int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
+            int k = nas->arcV[i][j][k1];
+			sumX += x[i][j][k];
+		}
+
+		exp = w[i] + nodeVec[j].parcelLoad - W*(1 - sumX);
+		exp2 = w[j];
+		
+        sprintf (var, "Constraint10_%d_%d", i, j);
+		
+        IloRange cons1 = (exp2 - exp >= 0);
+		cons1.setName(var);
+		model.add(cons1);
+	}
 
 	//Constraint 7 - tie service begining to node visit
 

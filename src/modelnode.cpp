@@ -223,6 +223,62 @@ void fillInfoRequests (instanceStat *inst, nodeArcsStruct *nas, probStat* proble
     }
 }
 
+void obligueDirectCustomer (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist) {
+
+    for (int i = 0; i < inst->n; i++) {
+        int pickup = i;
+        int delivery = i + inst->n;
+
+        nas->arcs[ pickup ][ delivery ] = true;
+
+        for (int j = 0; j < nodeVec.size(); j++) {
+            if (j == delivery) {
+                continue;
+            }
+
+            nas->arcs[ pickup ][ j ] = false;
+        }
+    }
+}
+
+void limitParcelCapacity (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist) {
+    
+    for (int i = 2*inst->n; i < 2*inst->n + inst->m; i++) {
+        for (int j = 2*inst->n; j < 2*inst->n + 2*inst->m; j++) {
+            if (j == i + inst->m) {
+                continue;
+            }
+
+            nas->arcs[ i ][ j ] = false;
+        }
+    }
+
+    for (int i = 2*inst->n + inst->m; i < 2*inst->n + 2*inst->m; i++) {
+        for (int j = 2*inst->n + inst->m; j < 2*inst->n + 2*inst->m; j++) {
+            nas->arcs[ i ][ j ] = false;
+        }
+    }
+}
+
+void limitCustomerCapacity (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist) {
+    
+    for (int i = 0; i < inst->n; i++) {
+        for (int j = 0; j < 2*inst->n; j++) {
+            if (j == i + inst->n) {
+                continue;
+            }
+
+            nas->arcs[ i ][ j ] = false;
+        }
+    }
+
+    for (int i = inst->n; i < 2*inst->n; i++) {
+        for (int j = inst->n; j < 2*inst->n; j++) {
+            nas->arcs[ i ][ j ] = false;
+        }
+    }
+}
+
 
 void initArcs (instanceStat *inst, nodeArcsStruct *nas){
     vector<bool> auxVec;
@@ -313,6 +369,24 @@ void feasibleArcs (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, v
     removeArcsToTheSameNode(inst, nas, problem, nodeVec, mdist);
     removeDeliveryToItsPickup(inst, nas, problem, nodeVec, mdist);
     /*---------------------------------------------------*/
+
+    // When a customer should be directly served
+    if (inst->instModel == "1AD") {
+        obligueDirectCustomer(inst, nas, problem, nodeVec, mdist);
+        limitParcelCapacity(inst, nas, problem, nodeVec, mdist);
+    }
+
+    // When a customer should be directly served
+    if (inst->instModel == "DirectCSARP") {
+        obligueDirectCustomer(inst, nas, problem, nodeVec, mdist);
+    }
+
+    // for parcel capacity limited to 1
+    if (inst->instModel == "DETOUR1") {
+        limitParcelCapacity(inst, nas, problem, nodeVec, mdist);
+        limitCustomerCapacity(inst, nas, problem, nodeVec, mdist);
+        // obligueDirectCustomer(inst, nas, problem, nodeVec, mdist);
+    }
 
     fillInfoDepotToDummy(inst, nas, problem, nodeVec, mdist);
     fillInfoToDummy(inst, nas, problem, nodeVec, mdist);
@@ -2323,9 +2397,6 @@ void fipMethod(nodeStat *node, instanceStat *inst, double **mdist, vector<nodeSt
     // if(sStat->feasible){
     mergeFipSol(inst, mdist, nodeVec, sStat, &fipStat, feasFlag);
     printSolFileFip1 (inst, sStat, problem, true, &fipStat);
-
-        //calcPassDetour(inst, nodeVec, &fipStat);
-    // }
 
 
 	for ( int i = 0; i < inst->V + inst->dummy; i++) {

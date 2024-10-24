@@ -33,6 +33,7 @@ struct nodeStat{
 	char label;
 	double load;
 	double load2;
+	double parcelLoad;
 	double e;
 	double l;
 	double xf;
