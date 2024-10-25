@@ -242,6 +242,7 @@ struct nodeArcsStruct{//for model node
 	vector< pair<int,int> > arcnf; //arcs that do not contain ending depot
 	// for each pair of requests, records the vehicles that can serve that arc
 	vector< vector< vector<int> > > arcV; 
+	vector< vector< double > > discount;
 
 	// These structures are exclusive of arcBundle method
 	map<pair<int, int>, vector< vector<int> > > subsequences;

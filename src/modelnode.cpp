@@ -279,6 +279,34 @@ void limitCustomerCapacity (const instanceStat *inst, nodeArcsStruct *nas, const
     }
 }
 
+// Calculate the motoboy discount when a customer detour
+vector< vector< double > > discountPerMin (const instanceStat *inst, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist) {
+    
+    double alfa = 1;
+    int _size = nodeVec.size();
+
+    /* Initialize discount vector */
+    vector < vector < double > > discounts = vector< vector< double > >(_size, vector< double >(_size, 0));
+    /*---------------------------------------------------*/
+
+    /* Calculating discount by time ( in this case we use distance, since they are equivalent in this model ) */
+    for (int i = 0; i < inst->n; i++) {
+        double distMain = mdist[ i ][ i + inst->n ];
+        double newDist;
+        double deltaPerRide;
+
+        for (int j = 2*inst->n; j < 2*inst->n + 2*inst->m; j++) {
+            newDist = mdist[ i ][ j ] + mdist[ j ][ i + inst->n ];
+
+            deltaPerRide = (newDist - distMain)/2.0;
+            discounts[ i ][ j ] += deltaPerRide*alfa;
+            discounts[ j ][ i + inst->n ] += deltaPerRide*alfa;
+        }
+    }
+    /*---------------------------------------------------*/
+
+    return discounts;
+}
 
 void initArcs (instanceStat *inst, nodeArcsStruct *nas){
     vector<bool> auxVec;
@@ -300,6 +328,7 @@ void initArcs (instanceStat *inst, nodeArcsStruct *nas){
     nas->arcPD.clear();
     nas->arcPP.clear();
     nas->arcnf.clear();
+    nas->discount.clear();
 
     for (int k = 0; k < inst->K; k++){
         nas->arcPlus.push_back(auxPairVec);
@@ -321,8 +350,6 @@ void initArcs (instanceStat *inst, nodeArcsStruct *nas){
         nas->arcs.push_back(auxVec);
         nas->arcPlus.push_back(auxPairVec);
         nas->arcMinus.push_back(auxPairVec);
-        
-
 
         nas->arcV.push_back(aux2d);
         
@@ -370,28 +397,34 @@ void feasibleArcs (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, v
     removeDeliveryToItsPickup(inst, nas, problem, nodeVec, mdist);
     /*---------------------------------------------------*/
 
-    // When a customer should be directly served
+    // Each model specifics
     if (inst->instModel == "1AD") {
         obligueDirectCustomer(inst, nas, problem, nodeVec, mdist);
         limitParcelCapacity(inst, nas, problem, nodeVec, mdist);
     }
 
-    // When a customer should be directly served
     if (inst->instModel == "DirectCSARP") {
         obligueDirectCustomer(inst, nas, problem, nodeVec, mdist);
     }
 
-    // for parcel capacity limited to 1
     if (inst->instModel == "DETOUR1") {
         limitParcelCapacity(inst, nas, problem, nodeVec, mdist);
         limitCustomerCapacity(inst, nas, problem, nodeVec, mdist);
-        // obligueDirectCustomer(inst, nas, problem, nodeVec, mdist);
+        nas->discount = discountPerMin(inst, problem, nodeVec, mdist);
     }
+    /*---------------------------------------------------*/
 
     fillInfoDepotToDummy(inst, nas, problem, nodeVec, mdist);
     fillInfoToDummy(inst, nas, problem, nodeVec, mdist);
     fillInfoFromDepot(inst, nas, problem, nodeVec, mdist);
     fillInfoRequests(inst, nas, problem, nodeVec, mdist);
+
+    // If discount vector was not initializes, it means there is no discount
+    if (nas->discount.empty()) {
+        int _size = nodeVec.size();
+        nas->discount = vector< vector< double > >(_size, vector< double >(_size, 0));
+    }
+    /*---------------------------------------------------*/
 
     for (int a = 0; a < nas->allArcs.size(); a++){
         int i = nas->allArcs[a].first;

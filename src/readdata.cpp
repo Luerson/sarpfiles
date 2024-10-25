@@ -221,10 +221,10 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
             node->load = vload[i];
 
             if (i < n){
-                node->load2 = -1;
-            }
-            else if (i < n + m){
                 node->load2 = 1;
+            }
+            else if (i < 2*n){
+                node->load2 = -1;
             }
             else{
                 node->load2 = 0;
