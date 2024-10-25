@@ -27,29 +27,25 @@ void conversionConstraints (const instanceStat *inst, nodeArcsStruct *nas, const
 	char var[100];
 
 	for (int i = 2*inst->n; i < 2*inst->n + inst->m; i++){
+
+		IloExpr exp(env);
+		IloExpr exp2(env);
 		for (int k = 0; k < inst->K; k++){
-			IloExpr exp1(env);
-			IloExpr exp2(env);
-			//Left side: arc leaves i
 			for (int a = 0; a < nas->vArcPlus[i][k].size(); a++){
-                int u = nas->vArcPlus[i][k][a].first;
-                int v = nas->vArcPlus[i][k][a].second;
+				int u = nas->vArcPlus[i][k][a].first;
+				int v = nas->vArcPlus[i][k][a].second;
 
-				exp1 += x[u][v][k];
+				exp += x[u][v][k];
 			}
-			//Right side: arc leaves i + m
-			for (int a = 0; a < nas->vArcPlus[i + inst->m][k].size(); a++){
-				int u = nas->vArcPlus[i + inst->m][k][a].first;
-                int v = nas->vArcPlus[i + inst->m][k][a].second;
-
-                exp2 += x[u][v][k];
-			}
-			sprintf (var, "Constraint3_%d_%d", i, k);
-			IloRange cons = ((exp1-exp2) == 0);
-			cons.setName(var);
-			model.add(cons);
 		}
-	}
+
+		exp2 += y[i];
+		sprintf (var, "ConversionConstraints_%d", i);
+		IloRange cons = (exp - exp2 == 0);
+		// IloRange cons = (exp == 1);
+		cons.setName(var);
+		model.add(cons);
+	}		
 }
 
 //Constraint - All passenger nodes must be visited
@@ -77,41 +73,59 @@ void allCustomersVisited (const instanceStat *inst, nodeArcsStruct *nas, const p
 void sameRoutePDParcel (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist, IloModel &model, IloEnv &env, IloArray <IloArray <IloBoolVarArray> > &x) {
 	char var[100];
 
-	for (int i = 0; i < 2*inst->n; i++){
-		IloExpr exp(env);
+	for (int i = 2*inst->n; i < 2*inst->n + inst->m; i++){
 		for (int k = 0; k < inst->K; k++){
+			IloExpr exp1(env);
+			IloExpr exp2(env);
+			//Left side: arc leaves i
 			for (int a = 0; a < nas->vArcPlus[i][k].size(); a++){
                 int u = nas->vArcPlus[i][k][a].first;
                 int v = nas->vArcPlus[i][k][a].second;
 
-				exp += x[u][v][k];
+				exp1 += x[u][v][k];
 			}
+			//Right side: arc leaves i + m
+			for (int a = 0; a < nas->vArcPlus[i + inst->m][k].size(); a++){
+				int u = nas->vArcPlus[i + inst->m][k][a].first;
+                int v = nas->vArcPlus[i + inst->m][k][a].second;
+
+                exp2 += x[u][v][k];
+			}
+			sprintf (var, "PDSameRoute_%d_%d", i, k);
+			IloRange cons = ((exp1-exp2) == 0);
+			cons.setName(var);
+			model.add(cons);
 		}
-		sprintf (var, "sameRoutePDParcel_%d", i);
-		IloRange cons = (exp == 1);
-		cons.setName(var);
-		model.add(cons);
 	}
 }
 
-//Constraint - parcel that is picked up, has to be delivered by the same vehicle
+//Constraint - customer that is picked up, has to be delivered by the same vehicle
 void sameRoutePDCustomer (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist, IloModel &model, IloEnv &env, IloArray <IloArray <IloBoolVarArray> > &x) {
 	char var[100];
 
-	for (int i = 0; i < 2*inst->n; i++){
-		IloExpr exp(env);
+	for (int i = 0; i < inst->n; i++){
 		for (int k = 0; k < inst->K; k++){
+			IloExpr exp1(env);
+			IloExpr exp2(env);
+			//Left side: arc leaves i
 			for (int a = 0; a < nas->vArcPlus[i][k].size(); a++){
                 int u = nas->vArcPlus[i][k][a].first;
                 int v = nas->vArcPlus[i][k][a].second;
 
-				exp += x[u][v][k];
+				exp1 += x[u][v][k];
 			}
+			//Right side: arc leaves i + m
+			for (int a = 0; a < nas->vArcPlus[i + inst->n][k].size(); a++){
+				int u = nas->vArcPlus[i + inst->n][k][a].first;
+                int v = nas->vArcPlus[i + inst->n][k][a].second;
+
+                exp2 += x[u][v][k];
+			}
+			sprintf (var, "CSameRoute_%d_%d", i, k);
+			IloRange cons = ((exp1-exp2) == 0);
+			cons.setName(var);
+			model.add(cons);
 		}
-		sprintf (var, "sameRoutePDCustomer_%d", i);
-		IloRange cons = (exp == 1);
-		cons.setName(var);
-		model.add(cons);
 	}
 }
 
