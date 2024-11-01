@@ -482,7 +482,7 @@ void hbundle::bTimeTest(instanceStat *inst, vector<nodeStat> &nodeVec, double **
     //testing feasibility of bundle in regards to time constraints:
     //if it starts after 0h; if the max driving time is not exceeded
     //if the end horizon is not exceeded.
-    if (startTime >= 0 && deltaTime <= inst->maxTime && endTime <= inst->T){
+    if (startTime >= 0 && deltaTime <= inst->maxTime && endTime <= inst->dayEnd){
         valid = 1;
         bStat->bundleStart.push_back(startTime);
         bStat->bundleEnd.push_back(endTime);

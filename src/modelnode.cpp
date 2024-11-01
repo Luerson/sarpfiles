@@ -19,7 +19,7 @@ void addArcsToParcelPickup (int i, instanceStat *inst, nodeArcsStruct *nas, prob
 
         double totalTime = nodeVec[i].e + nodeVec[i].delta + ttij + nodeVec[j].delta;
 
-        if (totalTime <= inst->T){
+        if (totalTime <= inst->dayEnd){
             nas->arcs[i][j] = true;
         }
     }
@@ -40,7 +40,7 @@ void addArcsToParcelDelivery (int i, instanceStat *inst, nodeArcsStruct *nas, pr
 
         double totalTime = nodeVec[i].e + nodeVec[i].delta + ttij + nodeVec[j].delta;
 
-        if (totalTime <= inst->T){
+        if (totalTime <= inst->dayEnd){
             nas->arcs[i][j] = true;
         }
     }
@@ -132,12 +132,12 @@ void removeDeliveryToItsPickup (instanceStat *inst, nodeArcsStruct *nas, probSta
 
 void fillInfoDepotToDummy (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
 
-    int fDepot = inst->V - inst->K;
+    int fDepot = inst->V - inst->Ks;
     int i, l;
 
-    for (int k = 0; k < inst->K; k++) {
+    for (int k = 0; k < inst->Ks; k++) {
         i = k + fDepot;
-        l = i + inst->K;
+        l = i + inst->Ks;
 
         if (!nas->arcs[i][l]) {
             continue;
@@ -154,10 +154,10 @@ void fillInfoDepotToDummy (instanceStat *inst, nodeArcsStruct *nas, probStat* pr
 
 void fillInfoToDummy (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
 
-    int fDepot = inst->V - inst->K;
+    int fDepot = inst->V - inst->Ks;
 
     for (int i = 0; i < fDepot; i++) {
-        for (int k = 0; k < inst->K; k++) {
+        for (int k = 0; k < inst->Ks; k++) {
             int j = k + inst->V;
 
             if (!nas->arcs[i][j]) {
@@ -177,9 +177,9 @@ void fillInfoToDummy (instanceStat *inst, nodeArcsStruct *nas, probStat* problem
 
 void fillInfoFromDepot (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
 
-    int fDepot = inst->V - inst->K;
+    int fDepot = inst->V - inst->Ks;
 
-    for (int k = 0; k < inst->K; k++) {
+    for (int k = 0; k < inst->Ks; k++) {
         for (int j = 0; j < fDepot; j++) {
             int i = k + fDepot;
 
@@ -200,7 +200,7 @@ void fillInfoFromDepot (instanceStat *inst, nodeArcsStruct *nas, probStat* probl
 
 void fillInfoRequests (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
 
-    int fDepot = inst->V - inst->K;
+    int fDepot = inst->V - inst->Ks;
 
     for (int i = 0; i < fDepot; i++) {
         for (int j = 0; j < fDepot; j++) {
@@ -216,7 +216,7 @@ void fillInfoRequests (instanceStat *inst, nodeArcsStruct *nas, probStat* proble
             nas->allArcs.push_back(nas->fArc);
 
             nas->arcnf.push_back(nas->fArc);
-            for (int k = 0; k < inst->K; k++) {
+            for (int k = 0; k < inst->Ks; k++) {
                 nas->arcV[i][j].push_back(k);
             }
         }
@@ -226,6 +226,28 @@ void fillInfoRequests (instanceStat *inst, nodeArcsStruct *nas, probStat* proble
 void obligueDirectCustomer (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist) {
 
     for (int i = 0; i < inst->n; i++) {
+        int pickup = i;
+        int delivery = i + inst->n;
+
+        nas->arcs[ pickup ][ delivery ] = true;
+
+        for (int j = 0; j < nodeVec.size(); j++) {
+            if (j == delivery) {
+                continue;
+            }
+
+            nas->arcs[ pickup ][ j ] = false;
+        }
+    }
+}
+
+void obligueDirectDouble (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist) {
+
+    for (int i = 0; i < inst->n; i++) {
+        if (nodeVec[i].customerLoad != 1 || nodeVec[i].parcelLoad != 1) {
+            continue;
+        }
+
         int pickup = i;
         int delivery = i + inst->n;
 
@@ -282,7 +304,7 @@ void limitCustomerCapacity (const instanceStat *inst, nodeArcsStruct *nas, const
 // Calculate the motoboy discount when a customer detour
 vector< vector< double > > discountPerMin (const instanceStat *inst, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist) {
     
-    double alfa = 1;
+    double alfa = 0.7;
     int _size = nodeVec.size();
 
     /* Initialize discount vector */
@@ -308,6 +330,35 @@ vector< vector< double > > discountPerMin (const instanceStat *inst, const probS
     return discounts;
 }
 
+void removeNonProfitableDetours (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist) {
+    
+    int count = 0;
+
+    for (int i = 0; i < inst->n; i++) {
+        double mainProfit = nodeVec[i].profit - mdist[i][i+inst->n]*inst->costkm;
+
+        for (int j = 2*inst->n; j < 2*inst->n + inst->m; j++) {
+            double newProfit = nodeVec[i].profit + nodeVec[j].profit - (mdist[i][j] + mdist[j][i+inst->n])*inst->costkm;
+            newProfit -= (nas->discount[i][j] + nas->discount[j][i+inst->n])*inst->costkm;
+
+            if (newProfit < mainProfit) {
+                nas->arcs[i][j] = false;
+                nas->arcs[j][i+inst->n] = false;
+            }
+        }
+
+        for (int j = 2*inst->n + inst->m; j < 2*inst->n + 2*inst->m; j++) {
+            double newProfit = nodeVec[i].profit + nodeVec[j-inst->m].profit - (mdist[i][j] + mdist[j][i+inst->n])*inst->costkm;
+            newProfit -= (nas->discount[i][j] + nas->discount[j][i+inst->n])*inst->costkm;
+
+            if (newProfit < mainProfit) {
+                nas->arcs[i][j] = false;
+                nas->arcs[j][i+inst->n] = false;
+            }
+        }
+    }
+}
+
 void initArcs (instanceStat *inst, nodeArcsStruct *nas){
     vector<bool> auxVec;
     vector< pair<int,int> > auxPairVec;
@@ -330,7 +381,7 @@ void initArcs (instanceStat *inst, nodeArcsStruct *nas){
     nas->arcnf.clear();
     nas->discount.clear();
 
-    for (int k = 0; k < inst->K; k++){
+    for (int k = 0; k < inst->Ks; k++){
         nas->arcPlus.push_back(auxPairVec);
     }
 
@@ -343,7 +394,7 @@ void initArcs (instanceStat *inst, nodeArcsStruct *nas){
 
     nas->arcPlus.clear();
 
-    for(int i = 0; i < inst->V + inst->dummy; i++){
+    for(int i = 0; i < inst->V + inst->Ks; i++){
         for(int j = 0; j < inst->V + inst->dummy; j++){
             auxVec.push_back(false);
         }
@@ -408,9 +459,14 @@ void feasibleArcs (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, v
     }
 
     if (inst->instModel == "DETOUR1") {
+        nas->discount = discountPerMin(inst, problem, nodeVec, mdist);
         limitParcelCapacity(inst, nas, problem, nodeVec, mdist);
         limitCustomerCapacity(inst, nas, problem, nodeVec, mdist);
-        nas->discount = discountPerMin(inst, problem, nodeVec, mdist);
+        // removeNonProfitableDetours(inst, nas, problem, nodeVec, mdist);
+    }
+
+    if (inst->instOrigin == "InstancesZTest") {
+        obligueDirectDouble(inst, nas, problem, nodeVec, mdist);
     }
     /*---------------------------------------------------*/
 
@@ -1046,7 +1102,7 @@ void viewSol (instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, sol
 
 	// solStatIni(sStat);
 
-    for (int k = 0; k < inst->K; k++){
+    for (int k = 0; k < inst->Ks; k++){
         sStat->solOrder.push_back(auxSolOrder);
     }
 
@@ -1118,8 +1174,8 @@ void viewSol (instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, sol
 
     // }
     // else{
-        for (int k = 0; k < inst->K; k++){
-            currSP = inst->V - inst->K + k;
+        for (int k = 0; k < inst->Ks; k++){
+            currSP = inst->V - inst->Ks + k;
 
             for (int i = 0; i < sStat->solvec[k].size(); i++){
                 auxPair.first = sStat->solvec[k][i].first;
@@ -1163,10 +1219,10 @@ void viewSol (instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, sol
             // getchar();
         }
 
-        cout  << "\nNumber of Vehicles: " << inst->K << endl;
+        cout  << "\nNumber of Vehicles: " << inst->Ks << endl;
 
         cout  << "\nSolution: " << endl;
-        for (int k = 0; k < inst->K; k++){
+        for (int k = 0; k < inst->Ks; k++){
             cout  << "Vehicle " << k << ": ";
             for (int i = 0; i < sStat->solOrder[k].size(); i++){
                 if (i < sStat->solOrder[k].size() - 1){
@@ -1182,7 +1238,7 @@ void viewSol (instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, sol
 
         // disregard if fip
         cout  << "\nSolution structure: " << endl;
-        for (int k = 0; k < inst->K; k++){
+        for (int k = 0; k < inst->Ks; k++){
             cout  << "Vehicle " << k << ": ";
             for (int i = 0; i < sStat->solOrder[k].size(); i++){
                 if (i < sStat->solOrder[k].size() - 1){

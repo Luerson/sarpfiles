@@ -244,7 +244,7 @@ void feasibleBundleArcs (instanceStat *inst, double **mdist, vector<nodeStat> &n
                 for (int j = 0; j < setN; j++){//j is not depot or dummy
                     if (i != j){
                         if (j > currentCluster*(ref + 1) + ref || j < currentCluster*(ref + 1)){\
-                            if (bStat->bundleEnd[j] <= inst->T){
+                            if (bStat->bundleEnd[j] <= inst->dayEnd){
                                 if (bStat->bundleStart[j] > 0){
                                     if (bStat->bundleStart[i] + bStat->bundleServVec[i] + (mdist[bStat->lastElement[i]][bStat->firstElement[j]]/inst->vmed) <= bStat->bundleStart[j]){
                                         bStat->bArcs[i][j] = true;
@@ -267,7 +267,7 @@ void feasibleBundleArcs (instanceStat *inst, double **mdist, vector<nodeStat> &n
                 currentCluster++;
                 bStat->clofbundle.push_back(currentCluster);
                 for (int j = 0; j < setN; j++){//j is a request bundle
-                    if (bStat->bundleEnd[j] <= inst->T){
+                    if (bStat->bundleEnd[j] <= inst->dayEnd){
                         if (bStat->bundleStart[j] > 0){
                             if (bStat->bundleStart[i] + bStat->bundleServVec[i] + (mdist[bStat->lastElement[i]][bStat->firstElement[j]]/inst->vmed) <= bStat->bundleStart[j]){
                                 bStat->bArcs[i][j] = true;                        
@@ -399,7 +399,7 @@ void feasibleBundleArcsPass (instanceStat *inst, double **mdist, vector<nodeStat
                 for (int j = 0; j < setN; j++){//j is not depot or dummy
                     if (i != j){ //j is a passenger only bundle
                         if (j > currentCluster*(ref + 1) + ref || j < currentCluster*(ref + 1)){
-                            if (bStat->bundleEnd[j] <= inst->T){
+                            if (bStat->bundleEnd[j] <= inst->dayEnd){
                                 if (bStat->bundleVec[i].size() < 2 && bStat->bundleVec[j].size() < 2){
                                     if (bStat->bundleStart[j] > 0){
                                         if (bStat->bundleStart[i] + bStat->bundleServVec[i] + (mdist[bStat->lastElement[i]][bStat->firstElement[j]]/inst->vmed) <= bStat->bundleStart[j]){
@@ -424,7 +424,7 @@ void feasibleBundleArcsPass (instanceStat *inst, double **mdist, vector<nodeStat
                 currentCluster++;
                 bStat->clofbundle.push_back(currentCluster);
                 for (int j = 0; j < setN; j++){//j is a request bundle
-                    if (bStat->bundleEnd[j] <= inst->T){
+                    if (bStat->bundleEnd[j] <= inst->dayEnd){
                         if (bStat->bundleVec[j].size() > 1){
                             continue;
                         }

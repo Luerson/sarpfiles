@@ -375,7 +375,7 @@ bool sarpRoute::testBlockIns(instanceStat *inst,
     // cout << "\n_____\nCurrent values: end: " << endRoute << " - start: " << startRoute << endl;
     // cout << "\nTotal new route length in time: " << endRoute - startRoute << endl;
     
-    if (endRoute > inst->T){
+    if (endRoute > inst->dayEnd){
         feasible = 0;
         return feasible;
     }
@@ -409,7 +409,7 @@ bool sarpRoute::fInsertion(instanceStat *inst, vector<nodeStat> &nodeVec, double
     // cout << "Total time: " << totalTime << endl;
     // getchar();
     
-    if (this->endtime < inst->T && totalTime < inst->maxTime && this->starttime > 0){
+    if (this->endtime < inst->dayEnd && totalTime < inst->maxTime && this->starttime > 0){
         feasible = 1;
     }
 
@@ -441,7 +441,7 @@ bool sarpRoute::fInsertionParcel(instanceStat *inst, vector<nodeStat> &nodeVec, 
     // cout << "Total time: " << totalTime << endl;
     // getchar();
     
-    if (this->endtime < inst->T && totalTime < inst->maxTime && this->starttime > 0){
+    if (this->endtime < inst->dayEnd && totalTime < inst->maxTime && this->starttime > 0){
         feasible = 1;
     }
 
@@ -523,7 +523,7 @@ bool sarpRoute::testSwap(instanceStat *inst, vector<nodeStat> &nodeVec,
                 }
             }
             else{//last position on interval is depot.
-                if (postTime < inst->T){
+                if (postTime < inst->dayEnd){
                     if(postTime - this->starttime < inst->maxTime){
                         feasible = 1;
                     }
@@ -609,7 +609,7 @@ bool sarpRoute::testSwap(instanceStat *inst, vector<nodeStat> &nodeVec,
                 }
             }
             else{//last position on interval is depot.
-                if (postTime < inst->T){
+                if (postTime < inst->dayEnd){
                     if(postTime - starttime < inst->maxTime){
                         feasible = 1;
                     }
@@ -837,7 +837,7 @@ bool sarpRoute::testRelocate(instanceStat *inst, vector<nodeStat> &nodeVec,
                 }
             }
             else{//last position on interval is depot.
-                if (postTime < inst->T){
+                if (postTime < inst->dayEnd){
                     if(postTime - starttime < inst->maxTime){
                         feasible = 1;
                     }
@@ -1095,7 +1095,7 @@ bool sarpRoute::testInsertion(instanceStat *inst, vector<nodeStat> &nodeVec, dou
         // cout << "*****************************" << endl;
         // getchar();
 
-        if (postTime <= inst->T){
+        if (postTime <= inst->dayEnd){
             feasible = 1;
 
             totalTime = postTime - this->starttime;
@@ -1347,7 +1347,7 @@ bool sarpRoute::testInsertionParcel(instanceStat *inst, vector<nodeStat> &nodeVe
 
             postTime += Time2;
             
-            if (postTime < inst->T){
+            if (postTime < inst->dayEnd){
                 feasible = 1;
 
                 tstart = nodeVec[firstPass].e - prevTime;
@@ -1443,7 +1443,7 @@ bool sarpRoute::testInsertionParcel(instanceStat *inst, vector<nodeStat> &nodeVe
         // cout << "*****************************" << endl;
         // getchar();
 
-        if (postTime <= inst->T){
+        if (postTime <= inst->dayEnd){
             feasible = 1;
 
             totalTime = postTime - this->starttime;
@@ -1540,7 +1540,7 @@ bool sarpRoute::testInsertionParcel(instanceStat *inst, vector<nodeStat> &nodeVe
             // cout << "*****************************" << endl;
             // getchar();
 
-            if (postTime <= inst->T){
+            if (postTime <= inst->dayEnd){
                 feasible = 1;
 
                 totalTime = postTime - starttime;

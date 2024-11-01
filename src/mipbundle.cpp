@@ -60,7 +60,7 @@ void mipbundle(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, bu
 	}
 
     // Variable start of service time depot
-    IloNumVarArray u(env, inst->K, 0, inst->T);
+    IloNumVarArray u(env, inst->K, 0, inst->dayEnd);
 
     for (int k = 0; k < inst->K; k++){
         sprintf(var, "u(%d)", k);
@@ -70,7 +70,7 @@ void mipbundle(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, bu
 
     // Variable start of service time dummy
 
-    IloNumVarArray uf(env, inst->K, 0, inst->T);
+    IloNumVarArray uf(env, inst->K, 0, inst->dayEnd);
 
     for (int k = 0; k < inst->K; k++){
         sprintf(var, "uf(%d)", k);
@@ -646,7 +646,7 @@ void miphbundle(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 	}
 
     // Variable start of service time depot
-    IloNumVarArray u(env, inst->K, 0, inst->T);
+    IloNumVarArray u(env, inst->K, 0, inst->dayEnd);
 
     for (int k = 0; k < inst->K; k++){
         sprintf(var, "u(%d)", k);
@@ -656,7 +656,7 @@ void miphbundle(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 
     // Variable start of service time dummy
 
-    IloNumVarArray uf(env, inst->K, 0, inst->T);
+    IloNumVarArray uf(env, inst->K, 0, inst->dayEnd);
 
     for (int k = 0; k < inst->K; k++){
         sprintf(var, "uf(%d)", k);
@@ -1042,7 +1042,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 	int currCluster;
 	vector< pair<int, int> > auxPairVec;
 	pair<int, int> auxPair;
-    int M = 2*inst->T;
+    int M = 2*inst->dayEnd;
     int W = inst->m + 1;
 
     // if (problem->scen == "1AD"){
@@ -1085,7 +1085,7 @@ void mipbundle2(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
 	}
 
     // Variable start of service time depot
-    IloNumVarArray b(env, bStat->bundleVec.size(), 0, inst->T);
+    IloNumVarArray b(env, bStat->bundleVec.size(), 0, inst->dayEnd);
 
     for (int k = 0; k < bStat->bundleVec.size(); k++){
         sprintf(var, "b(%d)", k);
@@ -2128,7 +2128,7 @@ void fipbundle(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, bu
 	// cout << "Size of solpass: " << fipStat->solPass.size() << endl;
 	for (int k = 0; k < fipStat->solPass.size(); k++){
 		// cout << "Size of solpass K: " << fipStat->solPass[k].size() << endl;
-		b[k] = IloNumVarArray (env, bStat->bundleVec.size(), 0, inst->T);
+		b[k] = IloNumVarArray (env, bStat->bundleVec.size(), 0, inst->dayEnd);
 		for (int i = 0; i < fipStat->solPass[k].size(); i++){
 			int u = fipStat->solPass[k][i];
 			sprintf(var, "b(%d,%d)", k, u);
@@ -2139,7 +2139,7 @@ void fipbundle(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, bu
 
 	// Variable start of service time for parcels
     int sizeofs = bStat->bundleVec.size() - setPD;
-	IloNumVarArray s(env, sizeofs, 0, inst->T);
+	IloNumVarArray s(env, sizeofs, 0, inst->dayEnd);
 	for (int i = setPD; i < bStat->bundleVec.size(); i++){
 		sprintf(var, "s(%d)", i);
 		s[i - setPD].setName(var);
@@ -2858,7 +2858,7 @@ void mfipbundle(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
     // setP = bStat->bundleVec.size() - (2*inst->K) - inst->m;
     
     int fDummy;
-    int M = 2*inst->T;
+    int M = 2*inst->dayEnd;
 
     setPD = bStat->bundleVec.size() - 3*inst->m;
     setN = setPD - (2*inst->K);
@@ -2896,7 +2896,7 @@ void mfipbundle(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, b
         }
     }
 
-	IloNumVarArray b(env, bStat->bundleVec.size(), 9, inst->T);
+	IloNumVarArray b(env, bStat->bundleVec.size(), 9, inst->dayEnd);
 	// cout << "Size of solpass: " << fipStat->solPass.size() << endl;
     // cout << "Size of solpass K: " << fipStat->solPass[k].size() << endl;
 

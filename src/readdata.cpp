@@ -16,6 +16,7 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     }  
 
     inst->preInst = 0;
+    inst->instOrigin = getOrigin(argv);
     inst->InstName = getInstName(argv);
     inst->instModel = getInstModel(argv);
     problem->model = argv[3];
@@ -25,7 +26,7 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     /*---------------------------------------------------*/
     double kmPerMin = inst->vmed/double(60);
     int beginMin = inst->B*60;
-    int endMin = inst->T*60;
+    int endMin = inst->dayEnd*60;
     /*---------------------------------------------------*/
 
 
@@ -34,6 +35,7 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     int n; // Número de clientes
     int m; // Número de pacotes
     int K; // Número de veículos
+    int S = -1;
     
     int R;     // quantidade de requests
     int V;     // quantidade original de nós (desconsiderando dummy)
@@ -71,12 +73,12 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     inst->m = m;
     inst->K = K;
 
-
     // Lendo todos os dados de requests
     /*---------------------------------------------------*/
     vector<double> vxs;
     vector<double> vys;
-    vector<double> vload;
+    vector<double> vloadCustomer;
+    vector<double> vloadParcel;
     vector<double> ve;
     vector<double> vxf;
     vector<double> vyf;
@@ -85,76 +87,47 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     for (int i = 0; i < R; i++){
         vxs.push_back(0);
         vys.push_back(0);
-        vload.push_back(0);
+        vloadCustomer.push_back(0);
+        vloadParcel.push_back(0);
         ve.push_back(0);
         vl.push_back(0);
     }
     /*---------------------------------------------------*/
 
-    // Lendo todos os dados em csarp
+    // Lendo todos os dados
     /*---------------------------------------------------*/
-    for (int i = 0; i < R; i++){
-        in >> tempNode >> vxs[i] >> vys[i] >> vload[i] >> ve[i] >> vl[i];
-    }
-
-    if (inst->instType == "csarp") {
-        for (int i = R; i < V; i++){
-            vxs.push_back(0);
-            vys.push_back(0);
-            vload.push_back(0);
-            ve.push_back(0);
-            vl.push_back(0);
-        }
-
-        for (int i = R; i < V; i++){
-            in >> tempNode >> vxs[i] >> vys[i] >> vload[i] >> ve[i] >> vl[i];
-        }
-    }
-    /*---------------------------------------------------*/
-
-
-    // Lendo todos os dados em ghsarp ou sf_Data
-    /*---------------------------------------------------*/
-
-    if (inst->instType == "ghsarp" || inst->instType == "sf_data") {
+    if (inst->instOrigin == "InstancesZTest") {
         for (int i = 0; i < R; i++){
-            in >> tempNode >> vxs[i] >> vys[i] >> tempNode >> vload[i] >> ve[i] >> vl[i];
+            in >> tempNode >> vxs[i] >> vys[i] >> vloadCustomer[i] >> vloadParcel[i] >> ve[i] >> vl[i];
         }
-
-        for (int i = R; i < V; i++){
-            vxs.push_back(0);
-            vys.push_back(0);
-            vload.push_back(0);
-            ve.push_back(0);
-            vl.push_back(0);
+    } else if (inst->instType != "sf_data") {
+        for (int i = 0; i < R; i++){
+            in >> tempNode >> vxs[i] >> vys[i] >> vloadCustomer[i] >> ve[i] >> vl[i];
         }
-
-        if (inst->instType == "ghsarp") {
-            in >> tempNode >> vxs[R] >> vys[R] >> vload[R] >> ve[R] >> vl[R];
-
-            for (int i = R + 1; i < V; i++){
-                in >> tempNode >> vxs[i] >> vys[i] >> vload[i] >> ve[i] >> vl[i];
-            }
-        } else {
-            in >> tempNode >> vxs[R] >> vys[R] >> tempNode >> vload[R] >> ve[R] >> vl[R];
-            for (int i = R + 1; i < V; i++){
-                in >> tempNode >> vxs[i] >> vys[i] >> tempNode >> vload[i] >> ve[i] >> vl[i];
-            }
+    } else {
+        for (int i = 0; i < R; i++){
+            in >> tempNode >> vxs[i] >> vys[i] >> tempNode >> vloadCustomer[i] >> ve[i] >> vl[i];
         }
     }
-    /*---------------------------------------------------*/
 
-
-    // Criando os dados dos dummy nodes
-    /*---------------------------------------------------*/
-    for (int i = 0; i < dummy; i++){
-        vxs.push_back(0);
-        vys.push_back(0);
-        vload.push_back(0);
-        ve.push_back(inst->B);
-        vl.push_back(inst->T);
+    if (inst->instOrigin == "InstancesZTest") {
+        S = max(S, readNewZTestsCsarp(inst, in, tempNode, vxs, vys, vloadCustomer, vloadParcel, ve, vl, R, V));
+    } else {
+        S = max(S, readDepotCsarp(inst, in, tempNode, vxs, vys, vloadCustomer, ve, vl, R, V));
+        S = max(S, readDepotGhsarp(inst, in, tempNode, vxs, vys, vloadCustomer, ve, vl, R, V));
+        S = max(S, readDepotSf_data(inst, in, tempNode, vxs, vys, vloadCustomer, ve, vl, R, V));
+        vloadParcel = vloadCustomer;
     }
+
+    fillDummy(vxs, vys, vloadCustomer, ve, vl, S, inst->B, inst->dayEnd);
     /*---------------------------------------------------*/
+
+    in.close();
+
+    int Sdummy = S;
+    inst->dummy = Sdummy;
+    V = R + S;
+    full = V + Sdummy;
 
     // Calcula a matriz de distâncias
     /*---------------------------------------------------*/
@@ -168,7 +141,6 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     calcDistSfsarp(dist, full, V, vxs, vys, vxf, vyf, inst->instType);
     /*---------------------------------------------------*/
     
-
     // Calculando os profits de cada nó
     /*---------------------------------------------------*/
     double *delta = new double[full]; // tempo de serviço de cada nó
@@ -179,20 +151,43 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
 
     for (int i = 0; i < full; i++){
         delta[i] = service/double(60);
-        if (i < n){ 
-            mandist = dist[i][i+n]; 
-            profit[i] = inst->minpas + inst->paskm*mandist;
-        }
-        else if (i < R){ 
-            if (i < 2*n || i >= 2*n + m){
-                profit[i] = 0;
+        profit[i] = 0;
+
+        if (inst->instOrigin == "InstancesZTest") {
+            double discount = 1;
+
+            if (vloadCustomer[i] == 1) {
+                mandist = dist[i][i+n]; 
+                profit[i] += inst->minpas + inst->paskm*mandist;
             }
-            else {
+
+            if (vloadParcel[i] == 1) {
                 mandist = dist[i][i+m];
-                profit[i] =  inst->minpar + inst->parkm*mandist;
+                double discount = inst->minpar + inst->parkm*mandist;
+                if (profit[i] - 0.00001 > 0) {
+                    discount -= inst->parkm*mandist;
+                    discount /= 2;
+                }
+
+                profit[i] += discount;
+            }
+        } else {
+            if (i < n){ 
+                mandist = dist[i][i+n]; 
+                profit[i] = inst->minpas + inst->paskm*mandist;
+            }
+            else if (i < R) {
+                if (i < 2*n || i >= 2*n + m){
+                    profit[i] = 0;
+                }
+                else {
+                    mandist = dist[i][i+m];
+                    profit[i] =  inst->minpar + inst->parkm*mandist;
+                }
             }
         }
-        else if (i >= V - K){
+
+        if (i >= V - K){
             delta[i] = 0;
             profit[i] = 0;
         }
@@ -203,7 +198,7 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     // Folgar a janela de tempo do delivery
     /*---------------------------------------------------*/
     for (int i = n; i < 2*n; i++) {
-        vl[i] = inst->T*60;
+        vl[i] = inst->dayEnd*60;
     }
     /*---------------------------------------------------*/
 
@@ -216,18 +211,19 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     // Preenchendo os dados de nodeVec
     /*---------------------------------------------------*/
      for (int i = 0; i < V; i++){
-            node->xs = vxs[i];
-            node->ys = vys[i];
-            node->load = vload[i];
+        node->xs = vxs[i];
+        node->ys = vys[i];
+        node->load = vloadCustomer[i];
 
+        if (inst->instOrigin != "InstancesZTest") {
             if (i < n){
-                node->load2 = 1;
+                node->customerLoad = 1;
             }
             else if (i < 2*n){
-                node->load2 = -1;
+                node->customerLoad = -1;
             }
             else{
-                node->load2 = 0;
+                node->customerLoad = 0;
             }    
 
             if (i >= 2*n && i < 2*n + m){
@@ -239,35 +235,43 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
             else{
                 node->parcelLoad = 0;
             }   
-                        
-            node->e = ve[i]/60;
-
-            node->l = vl[i]/60;
-
-            node->xf = vxs[i];
-            node->yf = vys[i];
-            node->delta = delta[i];
-            node->profit = profit[i];
-            node->index = i;
-            nodeVec.push_back(*node);
+        } else {
+            node->parcelLoad = vloadParcel[i];
+            node->customerLoad = vloadCustomer[i];
         }
+                    
+        node->e = ve[i]/60;
 
-        // Adding dummy nodes
-        for (int i = 0; i < inst->dummy; i++){
-            node->xs = 0;
-            node->ys = 0;
-            node->load = 0;        
-            node->e = inst->B;
-            node->l = inst->T;         
-            node->xf = 0;
-            node->yf = 0;
-            node->delta = 0;
-            node->profit = 0;
-            node->index = V + i;
-            nodeVec.push_back(*node);
-        }
+        node->l = vl[i]/60;
+
+        // cout << i << " " << node->e << " " << node->l << endl;
+
+        node->xf = vxs[i];
+        node->yf = vys[i];
+        node->delta = delta[i];
+        node->profit = profit[i];
+        node->index = i;
+        nodeVec.push_back(*node);
+    }
+    // getchar();
+
+    // Adding dummy nodes
+    for (int i = 0; i < inst->dummy; i++){
+        node->xs = 0;
+        node->ys = 0;
+        node->load = 0;    
+        node->customerLoad = 0;
+        node->parcelLoad = 0;    
+        node->e = ve[ve.size() - inst->dummy + i];
+        node->l = vl[vl.size() - inst->dummy + i];      
+        node->xf = 0;
+        node->yf = 0;
+        node->delta = 0;
+        node->profit = 0;
+        node->index = V + i;
+        nodeVec.push_back(*node);
+    }
     /*---------------------------------------------------*/
-
 
     // Preenchendo o objeto inst e Mdist
     /*---------------------------------------------------*/
@@ -276,6 +280,7 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     inst->n = n;
     inst->m = m;
     inst->V = V;
+    inst->Ks = inst->S.size();
     inst->service = service;
     inst->totalCustomProfit = 0;
     for (int i = 0; i < n; i++){
@@ -285,6 +290,167 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
 
     delete[] profit;
     delete[] delta;
+}
+
+void fillDummy(vector<double> &vxs, vector<double> &vys, vector<double> &vload, vector<double> &ve, vector<double> &vl, int S, int B, int T) {
+    for (int i = 0; i < S; i++){
+        vxs.push_back(0);
+        vys.push_back(0);
+        vload.push_back(0);
+        ve.push_back(ve[ve.size() - S]/60.0);
+        vl.push_back(vl[vl.size() - S]/60.0);
+    }
+}
+
+void resizeStructures(vector<double> &vxs, vector<double> &vys, vector<double> &vload, vector<double> &ve, vector<double> &vl, int _size) {
+    vxs.resize(vxs.size() + _size);
+    vys.resize(vys.size() + _size);
+    vload.resize(vload.size() + _size);
+    ve.resize(ve.size() + _size);
+    vl.resize(vl.size() + _size);
+}
+
+int readDepotCsarp(instanceStat *inst, ifstream &in, int tempNode, vector<double> &vxs, vector<double> &vys, vector<double> &vload, vector<double> &ve, vector<double> &vl, int startDepot, int startDummy) {
+    if (inst->instType != "csarp") {
+        return -1;
+    }
+
+    resizeStructures(vxs, vys, vload, ve, vl, startDummy - startDepot);
+
+    int shiftIndex = 0;
+    int shiftDepotIndex = 2*inst->n + 2*inst->m;
+
+    for (int i = startDepot; i < startDummy; i++){
+
+        // Each vehicle in old csarp has only one shift
+        inst->S.push_back(shiftIndex++);
+        inst->vehicleShifts.push_back(vector<int>(1, shiftDepotIndex++));
+
+        in >> tempNode >> vxs[i] >> vys[i] >> vload[i] >> ve[i] >> vl[i];
+    }
+
+    return shiftIndex;
+}
+
+int readDepotGhsarp(instanceStat *inst, ifstream &in, int tempNode, vector<double> &vxs, vector<double> &vys, vector<double> &vload, vector<double> &ve, vector<double> &vl, int startDepot, int startDummy) {
+    if (inst->instType != "ghsarp") {
+        return -1;
+    }
+
+    resizeStructures(vxs, vys, vload, ve, vl, startDummy - startDepot);
+
+    in >> tempNode >> vxs[startDepot] >> vys[startDepot] >> vload[startDepot] >> ve[startDepot] >> vl[startDepot];
+
+    // Each vehicle in old ghsarp has only one shift
+    int shiftIndex = 0;
+    int shiftDepotIndex = 2*inst->n + 2*inst->m;
+
+    inst->S.push_back(shiftIndex++);
+    inst->vehicleShifts.push_back(vector<int>(1, shiftDepotIndex++));
+
+    for (int i = startDepot + 1; i < startDummy; i++) {
+        vxs[i] = vxs[startDepot];
+        vys[i] = vys[startDepot];
+        vload[i] = vload[startDepot];
+        ve[i] = ve[startDepot];
+        vl[i] = vl[startDepot];
+
+        inst->S.push_back(shiftIndex++);
+        inst->vehicleShifts.push_back(vector<int>(1, shiftDepotIndex++));
+    }
+    
+    return shiftIndex;
+}
+
+int readDepotSf_data(instanceStat *inst, ifstream &in, int tempNode, vector<double> &vxs, vector<double> &vys, vector<double> &vload, vector<double> &ve, vector<double> &vl, int startDepot, int startDummy) {
+    if (inst->instType != "sf_data") {
+        return -1;
+    }
+
+    resizeStructures(vxs, vys, vload, ve, vl, 1);
+    
+    in >> tempNode >> vxs[startDepot] >> vys[startDepot] >> tempNode >> vload[startDepot] >> ve[startDepot] >> vl[startDepot];
+
+    rotate(vxs.begin(), vxs.begin() + 1, vxs.end());
+    rotate(vys.begin(), vys.begin() + 1, vys.end());
+    rotate(vload.begin(), vload.begin() + 1, vload.end());
+    rotate(ve.begin(), ve.begin() + 1, ve.end());
+    rotate(vl.begin(), vl.begin() + 1, vl.end());
+
+    rotate(vxs.begin() + inst->n, vxs.begin() + inst->n + inst->m, vxs.begin() + 2*inst->n + inst->m);
+    rotate(vys.begin() + inst->n, vys.begin() + inst->n + inst->m, vys.begin() + 2*inst->n + inst->m);
+    rotate(vload.begin() + inst->n, vload.begin() + inst->n + inst->m, vload.begin() + 2*inst->n + inst->m);
+    rotate(ve.begin() + inst->n, ve.begin() + inst->n + inst->m, ve.begin() + 2*inst->n + inst->m);
+    rotate(vl.begin() + inst->n, vl.begin() + inst->n + inst->m, vl.begin() + 2*inst->n + inst->m); 
+
+    resizeStructures(vxs, vys, vload, ve, vl, startDummy - startDepot - 1);
+
+    // Each vehicle in old ghsarp has only one shift
+    int shiftIndex = 0;
+    int shiftDepotIndex = 2*inst->n + 2*inst->m;
+
+    inst->S.push_back(shiftIndex++);
+    inst->vehicleShifts.push_back(vector<int>(1, shiftDepotIndex++));
+
+    for (int i = startDepot + 1; i < startDummy; i++){
+        vxs[i] = vxs[startDepot];
+        vys[i] = vys[startDepot];
+        vload[i] = vload[startDepot];
+        ve[i] = ve[startDepot];
+        vl[i] = vl[startDepot];
+
+        inst->S.push_back(shiftIndex++);
+        inst->vehicleShifts.push_back(vector<int>(1, shiftDepotIndex++));
+    }
+
+    return shiftIndex;
+}
+
+int readNewZTestsCsarp(instanceStat *inst, ifstream &in, int tempNode, vector<double> &vxs, vector<double> &vys, vector<double> &vloadCustomer, vector<double> &vloadParcel, vector<double> &ve, vector<double> &vl, int startDepot, int startDummy) {
+    int n;
+    
+    // Each vehicle can have multiple shifts
+    int shiftIndex = 0;
+    int shiftDepotIndex = 2*inst->n + 2*inst->m;
+ 
+    while (in >> n) {
+        inst->vehicleShifts.push_back(vector<int>());
+
+        for (int i = 0; i < n; i++) {
+            resizeStructures(vxs, vys, vloadCustomer, ve, vl, 1);
+            vloadParcel.resize(vloadParcel.size() + 1);
+
+            in >> tempNode >> vxs[shiftDepotIndex] >> vys[shiftDepotIndex] >> vloadCustomer[shiftDepotIndex] >> vloadParcel[i] >> ve[shiftDepotIndex] >> vl[shiftDepotIndex];
+
+            inst->S.push_back(shiftIndex++);
+            inst->vehicleShifts.back().push_back(shiftDepotIndex++);
+        }
+    }
+
+    return shiftIndex;
+}
+
+// Read the shifts of the vehicles in the instances
+// K is the total number of vehicles
+// N is the total number of requests
+vector<vector<pair<double, double>>> vehicleShifts(const int K, ifstream &in) {
+    vector<vector<pair<double, double>>> shifts;
+
+    shifts.resize(K);
+
+    for (int i = 0; i < K; i++) {
+        int n;
+        in >> n;
+
+        for (int j = 0; j < n; j++) {
+            shifts[i].push_back(make_pair(-1, -1));
+            in >> shifts[i][j].first >> shifts[i][j].second;
+            shifts[i][j].first /= 60.0;
+            shifts[i][j].second /= 60.0;
+        }
+    }
+
+    return shifts;
 }
 
 // Ajusta as janelas de tempo para o modo DETOUR1

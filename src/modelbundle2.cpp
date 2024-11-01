@@ -214,7 +214,7 @@ void selectEligibleBundles(instanceStat *inst, double **mdist, vector<nodeStat> 
             double earliestArrv = bStat->bundleStart[nBundles - 2*inst->K + k] + mdist[sDepot][u]/inst->vmed;
             double latestEnd = bStat->bundleEnd[i];
 
-            if (earliestArrv <= bStat->bundleStart[i] && bStat->bundleEnd[i] <= inst->T) {
+            if (earliestArrv <= bStat->bundleStart[i] && bStat->bundleEnd[i] <= inst->dayEnd) {
                 bStat->eligibleBundleVec[i] = true;
                 bStat->eligibleBundleVecV[i][k] = true;
             }
@@ -659,7 +659,7 @@ void feasibleBundleArcs2 (instanceStat *inst, double **mdist, vector<nodeStat> &
                 }
 
                 for (int j = setP; j < setN; j++){//j is parcel only bundle
-                    if (bStat->bundleEnd[i] + (mdist[bStat->lastElement[i]][bStat->firstElement[j]]/inst->vmed) + bStat->bundleServVec[j] <= inst->T) {
+                    if (bStat->bundleEnd[i] + (mdist[bStat->lastElement[i]][bStat->firstElement[j]]/inst->vmed) + bStat->bundleServVec[j] <= inst->dayEnd) {
                         if (bStat->eligibleBundleVec[i] && bStat->eligibleBundleVec[j]) {
                             bStat->bArcs[i][j] = true;
                         }
@@ -690,7 +690,7 @@ void feasibleBundleArcs2 (instanceStat *inst, double **mdist, vector<nodeStat> &
                         continue;
                     }
 
-                    if (bStat->bundleStart[i] + bStat->bundleServVec[i] + (mdist[bStat->lastElement[i]][bStat->firstElement[j]]/inst->vmed) <= inst->T) {
+                    if (bStat->bundleStart[i] + bStat->bundleServVec[i] + (mdist[bStat->lastElement[i]][bStat->firstElement[j]]/inst->vmed) <= inst->dayEnd) {
                         bStat->bArcs[i][j] = true;
                     }                                   
                 }
@@ -744,7 +744,7 @@ void feasibleBundleArcs2 (instanceStat *inst, double **mdist, vector<nodeStat> &
                             continue;
                         }
                         
-                        if (bStat->bundleStart[i] + bStat->bundleServVec[i] + (mdist[bStat->lastElement[i]][bStat->firstElement[j]]/inst->vmed) <= inst->T) {
+                        if (bStat->bundleStart[i] + bStat->bundleServVec[i] + (mdist[bStat->lastElement[i]][bStat->firstElement[j]]/inst->vmed) <= inst->dayEnd) {
                             bStat->bArcs[i][j] = true;
                         }                                   
                     }
@@ -1216,7 +1216,7 @@ void makeStartTimes2 (instanceStat *inst, double **mdist, vector<nodeStat> &node
             bStat->l[i] = nodeVec[firstNode].l;
         } else {
             bStat->e[i] = inst->B;
-            bStat->l[i] = inst->T;
+            bStat->l[i] = inst->dayEnd;
         }
 
         if (bStat->bundleVec[i].size() > 1){
@@ -1277,7 +1277,7 @@ void makeStartTimes2 (instanceStat *inst, double **mdist, vector<nodeStat> &node
             {
                 // cout << "P D" << endl;
                 bundleTime = 9;
-                endTime = inst->T - nodeVec[bStat->bundleVec[i].back()].delta;
+                endTime = inst->dayEnd - nodeVec[bStat->bundleVec[i].back()].delta;
             }
             // cout << bundleTime << " vs " << endTime << endl; 
             // getchar();

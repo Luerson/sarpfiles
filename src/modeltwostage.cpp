@@ -148,7 +148,7 @@ void mipts(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, probSt
 	}
 
 		// Variable start of service time
-	IloNumVarArray b(env, inst->n, 0, inst->T);
+	IloNumVarArray b(env, inst->n, 0, inst->dayEnd);
 	for (int i = 0; i < inst->n; i++){
 		sprintf(var, "b(%d)", i);
 		b[i].setName(var);

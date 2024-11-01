@@ -41,6 +41,7 @@ double CalcDistGeo (double *slatit, double* slongit, double *flatit, double* flo
 string getInstanceType (char **argv);
 string getInstName (char **argv);
 string getInstModel (char **argv);
+string getOrigin (char **argv);
 void getInstParam (instanceStat *inst, vector<int> &instParam);
 void solveselect(nodeStat *node, instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, probStat* problem, solStats *sStat);
 int testDurations(int a, int b, int c, instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec);

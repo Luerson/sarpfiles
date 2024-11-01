@@ -32,7 +32,7 @@ struct nodeStat{
 	double ys;
 	char label;
 	double load;
-	double load2;
+	double customerLoad;
 	double parcelLoad;
 	double e;
 	double l;
@@ -50,10 +50,11 @@ struct instanceStat{
     int m;
     int K;
     //double T = 24;
-    double T = 19;
+    double dayEnd = 19;
 	double B = 9;
 
     int V;
+	int Ks; // número total de shifts
     //double maxTime = 8;
 	double maxTime = 8;
 
@@ -74,6 +75,7 @@ struct instanceStat{
 	string InstName;
 	string instType;
 	string instModel;
+	string instOrigin;
 
 	double discpas = 3.24; //discount value for passenger detour (fip/osarp); gamma4 (same value as minpas'alpha')
 
@@ -85,6 +87,8 @@ struct instanceStat{
 
 	bool min;
 
+	vector<int> S; //Vector of all shifts
+	vector<vector<int>> vehicleShifts; //shifts for each vehicle 
 };
 
 struct probStat{

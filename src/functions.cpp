@@ -140,6 +140,22 @@ string getInstanceType (char **argv){
     return InstanceType;
 }
 
+string getOrigin (char **argv){
+
+    std::string filename(argv[1]);
+
+    // Encontra a posição do primeiro '/'
+    std::string::size_type loc = filename.find_first_of("/");
+
+    // Retorna a substring antes do primeiro '/'
+    if (loc != std::string::npos) {
+        return filename.substr(0, loc);
+    }
+    
+    // Se não houver '/', retorna a string inteira
+    return filename;
+}
+
 string getInstName (char **argv){
 
     string filename(argv[1]);
