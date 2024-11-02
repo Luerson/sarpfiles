@@ -16,10 +16,11 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     }  
 
     inst->preInst = 0;
-    inst->instOrigin = getOrigin(argv);
-    inst->InstName = getInstName(argv);
-    inst->instModel = getInstModel(argv);
-    problem->model = argv[3];
+    inst->instFolder = getOrigin(argv);
+    inst->InstName   = getInstName(argv);
+    inst->instType   = getInstanceType(argv); // instâcnia sf_data, csarp ou ghsarp
+    inst->instModel  = getInstModel(argv);
+    problem->model   = argv[3];
 
 
     // Convertendo as definiçõpes padrão para minutos
@@ -32,15 +33,15 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
 
     string file, ewf;
 
-    int n; // Número de clientes
-    int m; // Número de pacotes
-    int K; // Número de veículos
-    int S = -1;
+    int n;      // Número de clientes
+    int m;      // Número de pacotes
+    int K;      // Número de veículos
+    int S = -1; // Número de shifts
     
-    int R;     // quantidade de requests
-    int V;     // quantidade original de nós (desconsiderando dummy)
-    int dummy; // índice inicial dos dummy nodes
-    int full;  // total de nós da instância
+    int R;      // quantidade de requests
+    int V;      // quantidade original de nós (desconsiderando dummy)
+    int dummy;  // índice inicial dos dummy nodes
+    int full;   // total de nós da instância
 
     int tempNode;   // Variável lixo
     double service; // Tempo de serviço para cada nó
@@ -56,9 +57,7 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
         exit (1);
     }
 
-    inst->instType = getInstanceType(argv); // instâcnia sf_data, csarp ou ghsarp
-
-    // Lendo os dados da instância
+    // Lendo a primeira linha das instâncias
     in >> K >> service >> n >> m;
 
     R = 2*n + 2*m;
@@ -66,14 +65,7 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     dummy = K;
     full = V + dummy;
 
-    // Atualizando os dados da instância na struct
-    inst->service = service;
-    inst->dummy = dummy;
-    inst->n = n;
-    inst->m = m;
-    inst->K = K;
-
-    // Lendo todos os dados de requests
+    // Criando vectors importantes
     /*---------------------------------------------------*/
     vector<double> vxs;
     vector<double> vys;
@@ -84,19 +76,18 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     vector<double> vyf;
     vector<double> vl;
 
-    for (int i = 0; i < R; i++){
-        vxs.push_back(0);
-        vys.push_back(0);
-        vloadCustomer.push_back(0);
-        vloadParcel.push_back(0);
-        ve.push_back(0);
-        vl.push_back(0);
-    }
+    inst->service = service;
+    inst->n = n;
+    inst->m = m;
+    inst->K = K;
     /*---------------------------------------------------*/
+
 
     // Lendo todos os dados
     /*---------------------------------------------------*/
-    if (inst->instOrigin == "InstancesZTest") {
+    resizeStructures(vxs, vys, vloadCustomer, vloadParcel, ve, vl, R);
+
+    if (inst->instFolder == "InstancesZTest") {
         for (int i = 0; i < R; i++){
             in >> tempNode >> vxs[i] >> vys[i] >> vloadCustomer[i] >> vloadParcel[i] >> ve[i] >> vl[i];
         }
@@ -110,24 +101,25 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
         }
     }
 
-    if (inst->instOrigin == "InstancesZTest") {
+    if (inst->instFolder == "InstancesZTest") {
         S = max(S, readNewZTestsCsarp(inst, in, tempNode, vxs, vys, vloadCustomer, vloadParcel, ve, vl, R, V));
     } else {
-        S = max(S, readDepotCsarp(inst, in, tempNode, vxs, vys, vloadCustomer, ve, vl, R, V));
-        S = max(S, readDepotGhsarp(inst, in, tempNode, vxs, vys, vloadCustomer, ve, vl, R, V));
-        S = max(S, readDepotSf_data(inst, in, tempNode, vxs, vys, vloadCustomer, ve, vl, R, V));
+        S = max(S, readDepotCsarp(inst, in, tempNode, vxs, vys, vloadCustomer, vloadParcel, ve, vl, R, V));
+        S = max(S, readDepotGhsarp(inst, in, tempNode, vxs, vys, vloadCustomer, vloadParcel, ve, vl, R, V));
+        S = max(S, readDepotSf_data(inst, in, tempNode, vxs, vys, vloadCustomer, vloadParcel, ve, vl, R, V));
         vloadParcel = vloadCustomer;
     }
 
-    fillDummy(vxs, vys, vloadCustomer, ve, vl, S, inst->B, inst->dayEnd);
+    fillDummy(vxs, vys, vloadCustomer, vloadParcel, ve, vl, S, inst->B, inst->dayEnd);
     /*---------------------------------------------------*/
 
     in.close();
 
     int Sdummy = S;
     inst->dummy = Sdummy;
-    V = R + S;
-    full = V + Sdummy;
+
+    int sV = R + Sdummy;
+    full = sV + Sdummy;
 
     // Calcula a matriz de distâncias
     /*---------------------------------------------------*/
@@ -149,11 +141,14 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     double singleProfit;
     double mandist;
 
+    if (inst->instFolder == "InstancesZTest") {}
+
+
     for (int i = 0; i < full; i++){
         delta[i] = service/double(60);
         profit[i] = 0;
 
-        if (inst->instOrigin == "InstancesZTest") {
+        if (inst->instFolder == "InstancesZTest") {
             double discount = 1;
 
             if (vloadCustomer[i] == 1) {
@@ -187,7 +182,7 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
             }
         }
 
-        if (i >= V - K){
+        if (i >= sV - K){
             delta[i] = 0;
             profit[i] = 0;
         }
@@ -210,12 +205,12 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
 
     // Preenchendo os dados de nodeVec
     /*---------------------------------------------------*/
-     for (int i = 0; i < V; i++){
+     for (int i = 0; i < sV; i++){
         node->xs = vxs[i];
         node->ys = vys[i];
         node->load = vloadCustomer[i];
 
-        if (inst->instOrigin != "InstancesZTest") {
+        if (inst->instFolder != "InstancesZTest") {
             if (i < n){
                 node->customerLoad = 1;
             }
@@ -262,13 +257,13 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
         node->load = 0;    
         node->customerLoad = 0;
         node->parcelLoad = 0;    
-        node->e = ve[ve.size() - inst->dummy + i];
-        node->l = vl[vl.size() - inst->dummy + i];      
+        node->e = ve[sV + i];
+        node->l = vl[sV + i];      
         node->xf = 0;
         node->yf = 0;
         node->delta = 0;
         node->profit = 0;
-        node->index = V + i;
+        node->index = sV + i;
         nodeVec.push_back(*node);
     }
     /*---------------------------------------------------*/
@@ -279,7 +274,7 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     inst->K = K;
     inst->n = n;
     inst->m = m;
-    inst->V = V;
+    inst->V = sV;
     inst->Ks = inst->S.size();
     inst->service = service;
     inst->totalCustomProfit = 0;
@@ -292,30 +287,32 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     delete[] delta;
 }
 
-void fillDummy(vector<double> &vxs, vector<double> &vys, vector<double> &vload, vector<double> &ve, vector<double> &vl, int S, int B, int T) {
+void fillDummy(vector<double> &vxs, vector<double> &vys, vector<double> &vloadCustomer, vector<double> &vloadParcel, vector<double> &ve, vector<double> &vl, int S, int B, int T) {
     for (int i = 0; i < S; i++){
         vxs.push_back(0);
         vys.push_back(0);
-        vload.push_back(0);
+        vloadCustomer.push_back(0);
+        vloadParcel.push_back(0);
         ve.push_back(ve[ve.size() - S]/60.0);
         vl.push_back(vl[vl.size() - S]/60.0);
     }
 }
 
-void resizeStructures(vector<double> &vxs, vector<double> &vys, vector<double> &vload, vector<double> &ve, vector<double> &vl, int _size) {
-    vxs.resize(vxs.size() + _size);
-    vys.resize(vys.size() + _size);
-    vload.resize(vload.size() + _size);
-    ve.resize(ve.size() + _size);
-    vl.resize(vl.size() + _size);
+void resizeStructures(vector<double> &vxs, vector<double> &vys, vector<double> &vloadCustomer, vector<double> &vloadParcel, vector<double> &ve, vector<double> &vl, int _size) {
+    vxs.resize(vxs.size() + _size, 0);
+    vys.resize(vys.size() + _size, 0);
+    vloadCustomer.resize(vloadCustomer.size() + _size, 0);
+    vloadParcel.resize(vloadParcel.size() + _size, 0);
+    ve.resize(ve.size() + _size, 0);
+    vl.resize(vl.size() + _size, 0);
 }
 
-int readDepotCsarp(instanceStat *inst, ifstream &in, int tempNode, vector<double> &vxs, vector<double> &vys, vector<double> &vload, vector<double> &ve, vector<double> &vl, int startDepot, int startDummy) {
+int readDepotCsarp(instanceStat *inst, ifstream &in, int tempNode, vector<double> &vxs, vector<double> &vys, vector<double> &vloadCustomer, vector<double> &vloadParcel, vector<double> &ve, vector<double> &vl, int startDepot, int startDummy) {
     if (inst->instType != "csarp") {
         return -1;
     }
 
-    resizeStructures(vxs, vys, vload, ve, vl, startDummy - startDepot);
+    resizeStructures(vxs, vys, vloadCustomer, vloadParcel, ve, vl, startDummy - startDepot);
 
     int shiftIndex = 0;
     int shiftDepotIndex = 2*inst->n + 2*inst->m;
@@ -326,20 +323,20 @@ int readDepotCsarp(instanceStat *inst, ifstream &in, int tempNode, vector<double
         inst->S.push_back(shiftIndex++);
         inst->vehicleShifts.push_back(vector<int>(1, shiftDepotIndex++));
 
-        in >> tempNode >> vxs[i] >> vys[i] >> vload[i] >> ve[i] >> vl[i];
+        in >> tempNode >> vxs[i] >> vys[i] >> vloadCustomer[i] >> ve[i] >> vl[i];
     }
 
     return shiftIndex;
 }
 
-int readDepotGhsarp(instanceStat *inst, ifstream &in, int tempNode, vector<double> &vxs, vector<double> &vys, vector<double> &vload, vector<double> &ve, vector<double> &vl, int startDepot, int startDummy) {
+int readDepotGhsarp(instanceStat *inst, ifstream &in, int tempNode, vector<double> &vxs, vector<double> &vys, vector<double> &vloadCustomer, vector<double> &vloadParcel, vector<double> &ve, vector<double> &vl, int startDepot, int startDummy) {
     if (inst->instType != "ghsarp") {
         return -1;
     }
 
-    resizeStructures(vxs, vys, vload, ve, vl, startDummy - startDepot);
+    resizeStructures(vxs, vys, vloadCustomer, vloadParcel, ve, vl, startDummy - startDepot);
 
-    in >> tempNode >> vxs[startDepot] >> vys[startDepot] >> vload[startDepot] >> ve[startDepot] >> vl[startDepot];
+    in >> tempNode >> vxs[startDepot] >> vys[startDepot] >> vloadCustomer[startDepot] >> ve[startDepot] >> vl[startDepot];
 
     // Each vehicle in old ghsarp has only one shift
     int shiftIndex = 0;
@@ -351,7 +348,7 @@ int readDepotGhsarp(instanceStat *inst, ifstream &in, int tempNode, vector<doubl
     for (int i = startDepot + 1; i < startDummy; i++) {
         vxs[i] = vxs[startDepot];
         vys[i] = vys[startDepot];
-        vload[i] = vload[startDepot];
+        vloadCustomer[i] = vloadCustomer[startDepot];
         ve[i] = ve[startDepot];
         vl[i] = vl[startDepot];
 
@@ -362,28 +359,30 @@ int readDepotGhsarp(instanceStat *inst, ifstream &in, int tempNode, vector<doubl
     return shiftIndex;
 }
 
-int readDepotSf_data(instanceStat *inst, ifstream &in, int tempNode, vector<double> &vxs, vector<double> &vys, vector<double> &vload, vector<double> &ve, vector<double> &vl, int startDepot, int startDummy) {
+int readDepotSf_data(instanceStat *inst, ifstream &in, int tempNode, vector<double> &vxs, vector<double> &vys, vector<double> &vloadCustomer, vector<double> &vloadParcel, vector<double> &ve, vector<double> &vl, int startDepot, int startDummy) {
     if (inst->instType != "sf_data") {
         return -1;
     }
 
-    resizeStructures(vxs, vys, vload, ve, vl, 1);
+    resizeStructures(vxs, vys, vloadCustomer, vloadParcel, ve, vl, 1);
     
-    in >> tempNode >> vxs[startDepot] >> vys[startDepot] >> tempNode >> vload[startDepot] >> ve[startDepot] >> vl[startDepot];
+    in >> tempNode >> vxs[startDepot] >> vys[startDepot] >> tempNode >> vloadCustomer[startDepot] >> ve[startDepot] >> vl[startDepot];
 
     rotate(vxs.begin(), vxs.begin() + 1, vxs.end());
     rotate(vys.begin(), vys.begin() + 1, vys.end());
-    rotate(vload.begin(), vload.begin() + 1, vload.end());
+    rotate(vloadCustomer.begin(), vloadCustomer.begin() + 1, vloadCustomer.end());
+    rotate(vloadParcel.begin(), vloadParcel.begin() + 1, vloadParcel.end());
     rotate(ve.begin(), ve.begin() + 1, ve.end());
     rotate(vl.begin(), vl.begin() + 1, vl.end());
 
     rotate(vxs.begin() + inst->n, vxs.begin() + inst->n + inst->m, vxs.begin() + 2*inst->n + inst->m);
     rotate(vys.begin() + inst->n, vys.begin() + inst->n + inst->m, vys.begin() + 2*inst->n + inst->m);
-    rotate(vload.begin() + inst->n, vload.begin() + inst->n + inst->m, vload.begin() + 2*inst->n + inst->m);
+    rotate(vloadCustomer.begin() + inst->n, vloadCustomer.begin() + inst->n + inst->m, vloadCustomer.begin() + 2*inst->n + inst->m);
+    rotate(vloadParcel.begin() + inst->n, vloadParcel.begin() + inst->n + inst->m, vloadParcel.begin() + 2*inst->n + inst->m);
     rotate(ve.begin() + inst->n, ve.begin() + inst->n + inst->m, ve.begin() + 2*inst->n + inst->m);
     rotate(vl.begin() + inst->n, vl.begin() + inst->n + inst->m, vl.begin() + 2*inst->n + inst->m); 
 
-    resizeStructures(vxs, vys, vload, ve, vl, startDummy - startDepot - 1);
+    resizeStructures(vxs, vys, vloadCustomer, vloadParcel, ve, vl, startDummy - startDepot - 1);
 
     // Each vehicle in old ghsarp has only one shift
     int shiftIndex = 0;
@@ -395,7 +394,8 @@ int readDepotSf_data(instanceStat *inst, ifstream &in, int tempNode, vector<doub
     for (int i = startDepot + 1; i < startDummy; i++){
         vxs[i] = vxs[startDepot];
         vys[i] = vys[startDepot];
-        vload[i] = vload[startDepot];
+        vloadCustomer[i] = vloadCustomer[startDepot];
+        vloadParcel[i] = vloadParcel[startDepot];
         ve[i] = ve[startDepot];
         vl[i] = vl[startDepot];
 
@@ -417,7 +417,7 @@ int readNewZTestsCsarp(instanceStat *inst, ifstream &in, int tempNode, vector<do
         inst->vehicleShifts.push_back(vector<int>());
 
         for (int i = 0; i < n; i++) {
-            resizeStructures(vxs, vys, vloadCustomer, ve, vl, 1);
+            resizeStructures(vxs, vys, vloadCustomer, vloadParcel, ve, vl, 1);
             vloadParcel.resize(vloadParcel.size() + 1);
 
             in >> tempNode >> vxs[shiftDepotIndex] >> vys[shiftDepotIndex] >> vloadCustomer[shiftDepotIndex] >> vloadParcel[i] >> ve[shiftDepotIndex] >> vl[shiftDepotIndex];
@@ -473,6 +473,7 @@ void tightWindowDETOUR1(double **dist, int n, int m, vector<double> &ve, vector<
         }
 
         vl[i] = maxArrive;
+        vl[i] += 0.0001;
     }
 }
 

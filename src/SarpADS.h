@@ -75,7 +75,7 @@ struct instanceStat{
 	string InstName;
 	string instType;
 	string instModel;
-	string instOrigin;
+	string instFolder;
 
 	double discpas = 3.24; //discount value for passenger detour (fip/osarp); gamma4 (same value as minpas'alpha')
 

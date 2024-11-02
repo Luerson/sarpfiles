@@ -48,4 +48,9 @@ void limitCustomerDetour (const instanceStat *inst, nodeArcsStruct *nas, const p
 vector< int > parcelLoads(const vector<nodeStat> &nodeVec);
 vector< int > customerLoads(const vector<nodeStat> &nodeVec);
 
+void tieServiceTimeToVisit (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist, IloModel &model, IloEnv &env, IloBoolVarArray &y, IloNumVarArray &b);
+void arcTimeOrder (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist, IloModel &model, IloEnv &env, IloArray <IloArray <IloBoolVarArray> > &x, IloNumVarArray &b);
+void orderPD (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist, IloModel &model, IloEnv &env, IloNumVarArray &b);
+void earlyAndLate (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist, IloModel &model, IloEnv &env, IloBoolVarArray &y, IloNumVarArray &b);
+
 #endif

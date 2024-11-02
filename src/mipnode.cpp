@@ -26,7 +26,7 @@ vector< int > customerLoads(const vector<nodeStat> &nodeVec) {
 void conversionConstraints (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist, IloModel &model, IloEnv &env, IloArray <IloArray <IloBoolVarArray> > &x, IloBoolVarArray &y) {
 	char var[100];
 
-	for (int i = 2*inst->n; i < 2*inst->n + inst->m; i++){
+	for (int i = 0; i < inst->V; i++){
 
 		IloExpr exp(env);
 		IloExpr exp2(env);
@@ -46,6 +46,27 @@ void conversionConstraints (const instanceStat *inst, nodeArcsStruct *nas, const
 		cons.setName(var);
 		model.add(cons);
 	}		
+
+	for (int i = inst->V; i < nodeVec.size(); i++){
+
+		IloExpr exp(env);
+		IloExpr exp2(env);
+		for (int k = 0; k < inst->Ks; k++){
+			for (int a = 0; a < nas->vArcMinus[i][k].size(); a++){
+				int u = nas->vArcMinus[i][k][a].first;
+				int v = nas->vArcMinus[i][k][a].second;
+
+				exp += x[u][v][k];
+			}
+		}
+
+		exp2 += y[i];
+		sprintf (var, "ConversionConstraints_%d", i);
+		IloRange cons = (exp - exp2 == 0);
+		// IloRange cons = (exp == 1);
+		cons.setName(var);
+		model.add(cons);
+	}
 }
 
 //Constraint - All passenger nodes must be visited
@@ -63,7 +84,7 @@ void allCustomersVisited (const instanceStat *inst, nodeArcsStruct *nas, const p
 			}
 		}
 		sprintf (var, "allCustomersVisited_%d", i);
-		IloRange cons = (exp == 1);
+		IloRange cons = (exp <= 1);
 		cons.setName(var);
 		model.add(cons);
 	}
@@ -79,6 +100,7 @@ void sameRoutePDParcel (const instanceStat *inst, nodeArcsStruct *nas, const pro
 			IloExpr exp2(env);
 
 			for (auto s : inst->vehicleShifts[k]) {
+
 				s -= 2*inst->n + 2*inst->m;
 
 				for (int a = 0; a < nas->vArcPlus[i][s].size(); a++){
@@ -255,6 +277,94 @@ void limitCustomerDetour (const instanceStat *inst, nodeArcsStruct *nas, const p
 	}
 }
 
+//Constraint 7 - tie service begining to node visit
+void tieServiceTimeToVisit (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist, IloModel &model, IloEnv &env, IloBoolVarArray &y, IloNumVarArray &b) {
+	char var[100];
+
+	long M = 2*inst->dayEnd;
+	int fDepot = 2*inst->n + 2*inst->m;
+
+	for (int i = 0; i < nodeVec.size(); i++){
+        IloExpr exp(env);
+        exp = b[i] - M * y[i]; 
+        sprintf (var, "tieServiceTimeToVisit_%d", i);
+        IloRange cons = (exp <= 9);
+        cons.setName(var);
+        model.add(cons);
+    }
+}
+
+//Constraints - TW 
+void arcTimeOrder (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist, IloModel &model, IloEnv &env, IloArray <IloArray <IloBoolVarArray> > &x, IloNumVarArray &b) {
+	char var[100];
+
+	long M = 2*inst->dayEnd;
+
+	for (int a = 0; a < nas->allArcs.size(); a++){
+		IloExpr exp(env);
+		IloExpr sumX(env);
+        int i = nas->allArcs[a].first;
+        int j = nas->allArcs[a].second;
+
+        for (int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
+            int k = nas->arcV[i][j][k1];
+            sumX += x[i][j][k];
+		}
+
+		double cvalue = mdist[i][j]/inst->vmed;
+		exp = b[i] - b[j] + nodeVec[i].delta + (cvalue) - M * (1 - sumX);
+		sprintf (var, "arcTimeOrder_%d_%d", i, j);
+		IloRange cons = (exp <= 0);
+		cons.setName(var);
+		model.add(cons);		
+	}
+}
+
+//Constraint - service of pickup must come before the delivery
+void orderPD (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist, IloModel &model, IloEnv &env, IloNumVarArray &b) {
+	char var[100];
+
+	for (int i = 2*inst->n; i < 2*inst->n + inst->m; i++){
+		IloExpr exp(env);
+		exp = b[i] - b[i + inst->m];
+
+		sprintf (var, "arcTimeOrder_%d", i);
+		IloRange cons = (exp <= 0);
+		cons.setName(var);
+		model.add(cons);
+	}
+
+	for (int i = 0; i < inst->n; i++){
+		IloExpr exp(env);
+		exp = b[i] - b[i + inst->n];
+
+		sprintf (var, "arcTimeOrder_%d", i);
+		IloRange cons = (exp <= 0);
+		cons.setName(var);
+		model.add(cons);
+	}
+}
+
+//Constraints - bound the service beginning time by the earlier and later service times for each node
+void earlyAndLate (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist, IloModel &model, IloEnv &env, IloBoolVarArray &y, IloNumVarArray &b) {
+	char var[100];
+
+	for (int i = 0; i < nodeVec.size(); i++){
+		IloExpr exp(env);
+		exp = b[i];
+ 
+		sprintf (var, "Constraint11_%d", i);
+		IloRange cons1 = (exp <= nodeVec[i].l);
+		cons1.setName(var);
+		model.add(cons1);
+		
+		sprintf (var, "Constraint12_%d", i);
+		IloRange cons2 = (nodeVec[i].e <= exp);
+		cons2.setName(var);
+		model.add(cons2);	
+	}
+}
+
 void mipnode(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, probStat* problem, nodeArcsStruct *nas, solStats *sStat){
 	//MIP
 	//Creating environment and model 
@@ -371,6 +481,13 @@ void mipnode(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 	dummyDepot(inst, nas, problem, nodeVec, mdist, model, env, x);
 	/*---------------------------------------------------*/
 
+	/* Time windows constraints */
+	// tieServiceTimeToVisit(inst, nas, problem, nodeVec, mdist, model, env, y, b);
+	arcTimeOrder(inst, nas, problem, nodeVec, mdist, model, env, x, b);
+	earlyAndLate(inst, nas, problem, nodeVec, mdist, model, env, y, b);
+	orderPD(inst, nas, problem, nodeVec, mdist, model, env, b);
+	/*---------------------------------------------------*/
+
 	/* Each model has it's own constraints */
 	if (inst->instModel == "DETOUR1")
 	{
@@ -383,80 +500,9 @@ void mipnode(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 	}
 	/*---------------------------------------------------*/
 
-	//Constraint 7 - tie service begining to node visit
-
-    for (int i = 0; i < fDepot; i++){
-        IloExpr exp(env);
-        exp = b[i] - M * y[i]; 
-        sprintf (var, "Constraint7_%d", i);
-        IloRange cons = (exp <= 9);
-        cons.setName(var);
-        model.add(cons);
-    }
-
-
-	//Constraint 8 - service of pickup must come before the delivery
-
-	for (int i = 2*inst->n; i < 2*inst->n + inst->m; i++){
-		IloExpr exp(env);
-		exp = b[i] - b[i + inst->m];
-
-		sprintf (var, "Constraint8_%d", i);
-		IloRange cons = (exp <= 0);
-		cons.setName(var);
-		model.add(cons);
-	}
-
-	//Constraint 8.5 - service of pickup must come before the delivery
-
-	for (int i = 0; i < inst->n; i++){
-		IloExpr exp(env);
-		exp = b[i] - b[i + inst->n];
-
-		sprintf (var, "Constraint8_%d", i);
-		IloRange cons = (exp <= 0);
-		cons.setName(var);
-		model.add(cons);
-	}
-
-	//Constraints 9 - TW 
-
-	for (int a = 0; a < nas->allArcs.size(); a++){
-		IloExpr exp(env);
-		IloExpr sumX(env);
-        int i = nas->allArcs[a].first;
-        int j = nas->allArcs[a].second;
-
-        for (int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
-            int k = nas->arcV[i][j][k1];
-            sumX += x[i][j][k];
-		}
-			double cvalue = mdist[i][j]/inst->vmed;
-			//cvalue = std::round(cvalue * multiplier) / multiplier;
-			//cvalue = timeRound(cvalue);
-			exp = b[i] - b[j] + nodeVec[i].delta + (cvalue) - M * (1 - sumX);
-			sprintf (var, "Constraint9_%d_%d", i, j);
-			IloRange cons = (exp <= 0);
-			cons.setName(var);
-			model.add(cons);		
-	}
-
-	//Constraints 11 and 12 - bound the service beginning time by the earlier and later service times for each node
-
-	for (int i = 0; i < nodeVec.size(); i++){
-		IloExpr exp(env);
-		exp = b[i];
- 
-		sprintf (var, "Constraint11_%d", i);
-		IloRange cons1 = (exp <= nodeVec[i].l);
-		cons1.setName(var);
-		model.add(cons1);
-		
-		sprintf (var, "Constraint12_%d", i);
-		IloRange cons2 = (nodeVec[i].e <= exp);
-		cons2.setName(var);
-		model.add(cons2);	
-	}
+	// for (int i = 0; i < nodeVec.size(); i++) {
+	// 	cout << i << " " << nodeVec[i].e << " " << nodeVec[i].l << endl;
+	// }
 
 	// Constraint 13 - Each shift shold start with the load the last shift ended
 	for (int i = 0; i < inst->vehicleShifts.size(); i++) {
@@ -472,73 +518,35 @@ void mipnode(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 			IloRange cons = (exp == 0);
 			cons.setName(var);
 			model.add(cons);	
+			// cout << "aqui 1" << endl;
 		}
 	}
+	
+	// Constraint 14 - Each shift shold start with the load the last shift ended
+	for (int k = 0; k < inst->vehicleShifts.size(); k++) {
 
-    // for (int i = 0; i < inst->n; i++) {
-    //     double mainProfit = nodeVec[i].profit - mdist[i][i+inst->n]*inst->costkm;
+		for (int l = 1; l < inst->vehicleShifts[k].size(); l++) {
+			int u = inst->vehicleShifts[k][l-1] + inst->Ks;
+			int v = inst->vehicleShifts[k][l];
 
-    //     for (int j = 2*inst->n; j < 2*inst->n + inst->m; j++) {
+			for (int a = 0; a < nas->vArcMinus[u][u - (nodeVec.size() - inst->Ks)].size(); a++) {
+				int i = nas->vArcMinus[u][u - (nodeVec.size() - inst->Ks)][a].first;
+				int j = nas->vArcMinus[u][u - (nodeVec.size() - inst->Ks)][a].second;
 
-    //         double newProfit = nodeVec[i].profit + nodeVec[j].profit - (mdist[i][j] + mdist[j][i+inst->n])*inst->costkm;
-    //         newProfit -= (nas->discount[i][j] + nas->discount[j][i+inst->n])*inst->costkm;
+				IloExpr exp(env);
+				IloExpr sumX(env);
 
-    //         if (newProfit < mainProfit) {
-	// 			IloExpr exp(env);
-				
-	// 			if (nas->arcs[i][j]) {
-	// 				for (int k1 = 0; k1 < nas->arcV[i][j].size(); k1++) {
-	// 					int k = nas->arcV[i][j][k1];
+				int k = u - inst->V;
 
-	// 					exp += x[i][j][k];
-	// 				}
-	// 			}
+				exp += b[v] - b[u] - 0.0 + M*(1 - x[i][j][k]); 
 
-	// 			if (nas->arcs[j][i+inst->n]) {
-	// 				for (int k1 = 0; k1 < nas->arcV[j][i+inst->n].size(); k1++) {
-	// 					int k = nas->arcV[j][i+inst->n][k1];
-
-	// 					exp += x[j][i+inst->n][k];
-	// 				}
-	// 			}
-
-	// 			sprintf (var, "Constraint14_%d_%d", i, j);
-	// 			IloRange cons = (exp == 0);
-	// 			cons.setName(var);
-	// 			model.add(cons);
-    //         }
-    //     }
-
-    //     for (int j = 2*inst->n + inst->m; j < 2*inst->n + 2*inst->m; j++) {
-    //         double newProfit = nodeVec[i].profit + nodeVec[j-inst->m].profit - (mdist[i][j] + mdist[j][i+inst->n])*inst->costkm;
-    //         newProfit -= (nas->discount[i][j] + nas->discount[j][i+inst->n])*inst->costkm;
-
-    //         if (newProfit < mainProfit) {
-	// 			IloExpr exp(env);
-
-    //             if (nas->arcs[i][j]) {
-	// 				for (int k1 = 0; k1 < nas->arcV[i][j].size(); k1++) {
-	// 					int k = nas->arcV[i][j][k1];
-
-	// 					exp += x[i][j][k];
-	// 				}
-	// 			}
-
-	// 			if (nas->arcs[j][i+inst->n]) {
-	// 				for (int k1 = 0; k1 < nas->arcV[j][i+inst->n].size(); k1++) {
-	// 					int k = nas->arcV[j][i+inst->n][k1];
-
-	// 					exp += x[j][i+inst->n][k];
-	// 				}
-	// 			}
-
-	// 			sprintf (var, "Constraint15_%d_%d", i, j);
-	// 			IloRange cons = (exp == 0);
-	// 			cons.setName(var);
-	// 			model.add(cons);
-    //         }
-    //     }
-    // }
+				sprintf (var, "Constraint14_%d_%d", u, v);
+				IloRange cons = (exp >= 0);
+				cons.setName(var);
+				model.add(cons);	
+			}
+		}
+	}
 
     int threads;
 
@@ -547,13 +555,10 @@ void mipnode(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 	IloCplex nSARP(model);
 	nSARP.exportModel("nSARP.lp");
 	nSARP.setParam(IloCplex::Threads, threads);
-	nSARP.setParam(IloCplex::Param::TimeLimit, 7200);
+	nSARP.setParam(IloCplex::Param::TimeLimit, 3600);
 	// nSARP.setOut(env.getNullStream());
 	
 	const IloArray<IloArray<IloBoolVarArray>>& x_ref = x;
-
-	// MylazyNode* lazyCbk = new (env) MylazyNode(env, x_ref, nas, inst, nodeVec, mdist, (int)nodeVec.size(), (int)inst->K, (int)inst->m, (int)inst->n);
-	// nSARP.use(lazyCbk);
 
     IloNum start;
     IloNum time;
