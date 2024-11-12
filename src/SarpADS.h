@@ -89,6 +89,10 @@ struct instanceStat{
 
 	vector<int> S; //Vector of all shifts
 	vector<vector<int>> vehicleShifts; //shifts for each vehicle 
+	vector<vector<pair<double, double>>> vehicleShiftLocal;
+
+	vector<pair<int, int>> STimes; //Vector of all shift times
+	vector<vector<pair<int, int>>> vehicleShiftTimes; //shifts for each vehicle 
 };
 
 struct probStat{

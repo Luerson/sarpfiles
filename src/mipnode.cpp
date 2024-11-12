@@ -26,11 +26,15 @@ vector< int > customerLoads(const vector<nodeStat> &nodeVec) {
 void conversionConstraints (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist, IloModel &model, IloEnv &env, IloArray <IloArray <IloBoolVarArray> > &x, IloBoolVarArray &y) {
 	char var[100];
 
-	for (int i = 0; i < inst->V; i++){
+	for (int i = 0; i < nodeVec.size(); i++){
+		
+		if (i >= inst->V && i < inst->V + inst->K) {
+			continue;
+		}
 
 		IloExpr exp(env);
 		IloExpr exp2(env);
-		for (int k = 0; k < inst->Ks; k++){
+		for (int k = 0; k < inst->K; k++){
 			for (int a = 0; a < nas->vArcPlus[i][k].size(); a++){
 				int u = nas->vArcPlus[i][k][a].first;
 				int v = nas->vArcPlus[i][k][a].second;
@@ -47,11 +51,11 @@ void conversionConstraints (const instanceStat *inst, nodeArcsStruct *nas, const
 		model.add(cons);
 	}		
 
-	for (int i = inst->V; i < nodeVec.size(); i++){
+	for (int i = inst->V; i < inst->V + inst->K; i++){
 
 		IloExpr exp(env);
 		IloExpr exp2(env);
-		for (int k = 0; k < inst->Ks; k++){
+		for (int k = 0; k < inst->K; k++){
 			for (int a = 0; a < nas->vArcMinus[i][k].size(); a++){
 				int u = nas->vArcMinus[i][k][a].first;
 				int v = nas->vArcMinus[i][k][a].second;
@@ -73,9 +77,9 @@ void conversionConstraints (const instanceStat *inst, nodeArcsStruct *nas, const
 void allCustomersVisited (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist, IloModel &model, IloEnv &env, IloArray <IloArray <IloBoolVarArray> > &x) {
 	char var[100];
 
-	for (int i = 0; i < 2*inst->n; i++){
+	for (int i = 0; i < 2*inst->n + 2*inst->m; i++){
 		IloExpr exp(env);
-		for (int k = 0; k < inst->Ks; k++){
+		for (int k = 0; k < inst->K; k++){
 			for (int a = 0; a < nas->vArcPlus[i][k].size(); a++){
                 int u = nas->vArcPlus[i][k][a].first;
                 int v = nas->vArcPlus[i][k][a].second;
@@ -99,23 +103,18 @@ void sameRoutePDParcel (const instanceStat *inst, nodeArcsStruct *nas, const pro
 			IloExpr exp1(env);
 			IloExpr exp2(env);
 
-			for (auto s : inst->vehicleShifts[k]) {
+			for (int a = 0; a < nas->vArcPlus[i][k].size(); a++){
+				int u = nas->vArcPlus[i][k][a].first;
+				int v = nas->vArcPlus[i][k][a].second;
 
-				s -= 2*inst->n + 2*inst->m;
+				exp1 += x[u][v][k];
+			}
+			//Right side: arc leaves i + m
+			for (int a = 0; a < nas->vArcPlus[i + inst->m][k].size(); a++){
+				int u = nas->vArcPlus[i + inst->m][k][a].first;
+				int v = nas->vArcPlus[i + inst->m][k][a].second;
 
-				for (int a = 0; a < nas->vArcPlus[i][s].size(); a++){
-					int u = nas->vArcPlus[i][s][a].first;
-					int v = nas->vArcPlus[i][s][a].second;
-
-					exp1 += x[u][v][s];
-				}
-				//Right side: arc leaves i + m
-				for (int a = 0; a < nas->vArcPlus[i + inst->m][s].size(); a++){
-					int u = nas->vArcPlus[i + inst->m][s][a].first;
-					int v = nas->vArcPlus[i + inst->m][s][a].second;
-
-					exp2 += x[u][v][s];
-				}
+				exp2 += x[u][v][k];
 			}
 			//Left side: arc leaves i
 			sprintf (var, "PDSameRoute_%d_%d", i, k);
@@ -131,7 +130,7 @@ void sameRoutePDCustomer (const instanceStat *inst, nodeArcsStruct *nas, const p
 	char var[100];
 
 	for (int i = 0; i < inst->n; i++){
-		for (int k = 0; k < inst->Ks; k++){
+		for (int k = 0; k < inst->K; k++){
 			IloExpr exp1(env);
 			IloExpr exp2(env);
 			//Left side: arc leaves i
@@ -160,8 +159,12 @@ void sameRoutePDCustomer (const instanceStat *inst, nodeArcsStruct *nas, const p
 void flowConservation (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist, IloModel &model, IloEnv &env, IloArray <IloArray <IloBoolVarArray> > &x) {
 	char var[100];
 	
-	for (int a = 0; a < 2*inst->n + 2*inst->m; a++){
-		for (int k = 0; k < inst->Ks; k++){
+	for (int a = 0; a < nodeVec.size(); a++){
+		if (a >= inst->V - inst->K && a < inst->V + inst->K) {
+			continue;
+		}
+
+		for (int k = 0; k < inst->K; k++){
 			IloExpr exp1(env);
 			IloExpr exp2(env);
 			//Left side: arc leaves i
@@ -188,11 +191,11 @@ void flowConservation (const instanceStat *inst, nodeArcsStruct *nas, const prob
 void startDepot (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist, IloModel &model, IloEnv &env, IloArray <IloArray <IloBoolVarArray> > &x) {
 	char var[100];
 	
-	for (int k = 0; k < inst->Ks; k++){
+	for (int k = 0; k < inst->K; k++){
         IloExpr exp(env);
-        for (int a = 0; a < nas->vArcPlus[inst->V - inst->Ks + k][k].size(); a++){
-            int u = nas->vArcPlus[inst->V - inst->Ks + k][k][a].first;
-            int v = nas->vArcPlus[inst->V - inst->Ks + k][k][a].second;
+        for (int a = 0; a < nas->vArcPlus[inst->V - inst->K + k][k].size(); a++){
+            int u = nas->vArcPlus[inst->V - inst->K + k][k][a].first;
+            int v = nas->vArcPlus[inst->V - inst->K + k][k][a].second;
 
             exp += x[u][v][k];
         }
@@ -207,7 +210,7 @@ void startDepot (const instanceStat *inst, nodeArcsStruct *nas, const probStat* 
 void dummyDepot (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist, IloModel &model, IloEnv &env, IloArray <IloArray <IloBoolVarArray> > &x) {
 	char var[100];
 
-	for (int k = 0; k < inst->Ks; k++){
+	for (int k = 0; k < inst->K; k++){
 		IloExpr exp(env);
 		for (int a = 0; a < nas->vArcMinus[inst->V + k][k].size(); a++){
             int u = nas->vArcMinus[inst->V + k][k][a].first;
@@ -378,7 +381,7 @@ void mipnode(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 	int Q = 1;
 
     int fDepot = 2*inst->n + 2*inst->m;
-    int fDummy = 2*inst->n + 2*inst->m + inst->Ks;
+    int fDummy = 2*inst->n + 2*inst->m + inst->K;
 	
 	int decimalPlaces = 4;
     double multiplier = std::pow(10, decimalPlaces);
@@ -392,19 +395,21 @@ void mipnode(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
     for (int i = 0; i < nodeVec.size(); i++){
         x[i] = IloArray <IloBoolVarArray> (env, nodeVec.size());
         for(int j = 0; j < nodeVec.size(); ++j){
-            if (nas->arcs[i][j] != true){
-                continue; // If arc i to j is invalid
-            } 
 
-            x[i][j] = IloBoolVarArray (env, inst->Ks); //Number of Vehicles
-            for(int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
-                int k = nas->arcV[i][j][k1];
+			x[i][j] = IloBoolVarArray (env, inst->K); //Number of Vehicles
+			
+			if (nas->arcs[i][j] != true){
+				continue; // If arc i to j is invalid
+			} 
 
-                sprintf(var, "x(%d,%d,%d)", i, j, k);
-                x[i][j][k].setName(var);
-                model.add(x[i][j][k]);
-                // // TODO UNCOMMENT //  << "x: [" << i << "][" << j << "][" << k << "]" << endl;
-            }
+			for(int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
+				int k = nas->arcV[i][j][k1];
+
+				sprintf(var, "x(%d,%d,%d)", i, j, k);
+				x[i][j][k].setName(var);
+				model.add(x[i][j][k]);
+				// // TODO UNCOMMENT //  << "x: [" << i << "][" << j << "][" << k << "]" << endl;
+			}
         }
     }
 
@@ -459,6 +464,17 @@ void mipnode(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 
 	//Creating constraints
 
+	IloExpr maximum(env);
+
+	for (int a = 0; a < nas->allArcs.size(); a++){
+        int i = nas->allArcs[a].first;
+        int j = nas->allArcs[a].second;
+        for (int k1 = 0; k1 < nas->arcV[i][j].size(); k1++){
+            int k = nas->arcV[i][j][k1];
+            maximum += (nodeVec[i].profit - (double)inst->costkm*(mdist[i][j] + nas->discount[i][j])) * x[i][j][k];
+        }
+    }
+ 
 	/* Visit variables X arc Variables */
 	conversionConstraints(inst, nas, problem, nodeVec, mdist, model, env, x, y);
 	/*---------------------------------------------------*/
@@ -481,6 +497,31 @@ void mipnode(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 	dummyDepot(inst, nas, problem, nodeVec, mdist, model, env, x);
 	/*---------------------------------------------------*/
 
+	for (int k = 0; k < inst->vehicleShifts.size(); k++) {
+		for (int i1 = 0; i1 < inst->vehicleShifts[k].size(); i1++) {
+			IloExpr exp(env);
+
+			int i = inst->vehicleShifts[k][i1];
+
+			// cout << i << endl;
+			// getchar();
+
+			for (int a = 0; a < nas->vArcPlus[i][k].size(); a++){
+				int u = nas->vArcPlus[i][k][a].first;
+				int v = nas->vArcPlus[i][k][a].second;
+
+				// cout << u << " " << v << " " << k << endl;
+				// getchar(); 
+
+				exp += x[u][v][k];
+			}
+			sprintf (var, "rest_nodes_%d", k);
+			IloRange cons = (exp == 1);
+			cons.setName(var);
+			model.add(cons);
+		}
+	}
+
 	/* Time windows constraints */
 	// tieServiceTimeToVisit(inst, nas, problem, nodeVec, mdist, model, env, y, b);
 	arcTimeOrder(inst, nas, problem, nodeVec, mdist, model, env, x, b);
@@ -488,15 +529,16 @@ void mipnode(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 	orderPD(inst, nas, problem, nodeVec, mdist, model, env, b);
 	/*---------------------------------------------------*/
 
+	loadConstraints(inst->m + 1, parcelLoads(nodeVec), nas, mdist, model, env, x, w);
+
 	/* Each model has it's own constraints */
 	if (inst->instModel == "DETOUR1")
 	{
-		loadConstraints(inst->m + 1, parcelLoads(nodeVec), nas, mdist, model, env, x, w);
 		limitCustomerDetour(inst, nas, problem, nodeVec, mdist, model, env, x);
 	}
 	else if (inst->instModel == "1AD")
 	{
-		loadConstraints(inst->m + 1, parcelLoads(nodeVec), nas, mdist, model, env, x, w);
+		// loadConstraints(inst->m + 1, parcelLoads(nodeVec), nas, mdist, model, env, x, w);
 	}
 	/*---------------------------------------------------*/
 
@@ -504,49 +546,48 @@ void mipnode(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 	// 	cout << i << " " << nodeVec[i].e << " " << nodeVec[i].l << endl;
 	// }
 
-	// Constraint 13 - Each shift shold start with the load the last shift ended
-	for (int i = 0; i < inst->vehicleShifts.size(); i++) {
-		for (int j = 1; j < inst->vehicleShifts[i].size(); j++) {
-			IloExpr exp(env);
+	// // Constraint 13 - Each shift should start with the load the last shift ended
+	// for (int i = 0; i < inst->vehicleShifts.size(); i++) {
+	// 	for (int j = 1; j < inst->vehicleShifts[i].size(); j++) {
+	// 		IloExpr exp(env);
 
-			int u = inst->vehicleShifts[i][j-1] + inst->Ks;
-			int v = inst->vehicleShifts[i][j];
+	// 		int u = inst->vehicleShifts[i][j-1] + inst->K;
+	// 		int v = inst->vehicleShifts[i][j];
 
-			exp += w[u] - w[v];
+	// 		exp += w[u] - w[v];
 
-			sprintf (var, "Constraint13_%d_%d", i, j);
-			IloRange cons = (exp == 0);
-			cons.setName(var);
-			model.add(cons);	
-			// cout << "aqui 1" << endl;
-		}
-	}
+	// 		sprintf (var, "Constraint13_%d_%d", i, j);
+	// 		IloRange cons = (exp == 0);
+	// 		cons.setName(var);
+	// 		model.add(cons);
+	// 	}
+	// }
 	
-	// Constraint 14 - Each shift shold start with the load the last shift ended
-	for (int k = 0; k < inst->vehicleShifts.size(); k++) {
+	// // Constraint 14 - Each shift should start with the load the last shift ended
+	// for (int k = 0; k < inst->vehicleShifts.size(); k++) {
 
-		for (int l = 1; l < inst->vehicleShifts[k].size(); l++) {
-			int u = inst->vehicleShifts[k][l-1] + inst->Ks;
-			int v = inst->vehicleShifts[k][l];
+	// 	for (int l = 1; l < inst->vehicleShifts[k].size(); l++) {
+	// 		int u = inst->vehicleShifts[k][l-1] + inst->K;
+	// 		int v = inst->vehicleShifts[k][l];
 
-			for (int a = 0; a < nas->vArcMinus[u][u - (nodeVec.size() - inst->Ks)].size(); a++) {
-				int i = nas->vArcMinus[u][u - (nodeVec.size() - inst->Ks)][a].first;
-				int j = nas->vArcMinus[u][u - (nodeVec.size() - inst->Ks)][a].second;
+	// 		for (int a = 0; a < nas->vArcMinus[u][u - (nodeVec.size() - inst->K)].size(); a++) {
+	// 			int i = nas->vArcMinus[u][u - (nodeVec.size() - inst->K)][a].first;
+	// 			int j = nas->vArcMinus[u][u - (nodeVec.size() - inst->K)][a].second;
 
-				IloExpr exp(env);
-				IloExpr sumX(env);
+	// 			IloExpr exp(env);
+	// 			IloExpr sumX(env);
 
-				int k = u - inst->V;
+	// 			int k = u - inst->V;
 
-				exp += b[v] - b[u] - 0.0 + M*(1 - x[i][j][k]); 
+	// 			exp += b[v] - b[u] - 0.0 + M*(1 - x[i][j][k]); 
 
-				sprintf (var, "Constraint14_%d_%d", u, v);
-				IloRange cons = (exp >= 0);
-				cons.setName(var);
-				model.add(cons);	
-			}
-		}
-	}
+	// 			sprintf (var, "Constraint14_%d_%d", u, v);
+	// 			IloRange cons = (exp >= 0);
+	// 			cons.setName(var);
+	// 			model.add(cons);	
+	// 		}
+	// 	}
+	// }
 
     int threads;
 
@@ -556,6 +597,7 @@ void mipnode(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
 	nSARP.exportModel("nSARP.lp");
 	nSARP.setParam(IloCplex::Threads, threads);
 	nSARP.setParam(IloCplex::Param::TimeLimit, 3600);
+	// nSARP.setParam(IloCplex::RootAlg, IloCplex::Primal);
 	// nSARP.setOut(env.getNullStream());
 	
 	const IloArray<IloArray<IloBoolVarArray>>& x_ref = x;
@@ -579,7 +621,7 @@ void mipnode(instanceStat *inst, vector<nodeStat> &nodeVec, double **mdist, prob
         sStat->solprofit = nSARP.getObjValue();
         sStat->time = time;
 
-        for (int k = 0; k < inst->Ks; k++){
+        for (int k = 0; k < inst->K; k++){
             sStat->solvec.push_back(auxPairVec);
         }
 
@@ -646,7 +688,7 @@ void printResults(instanceStat *inst, double **mdist, solStats *sStat, vector<no
 
         // TODO UNCOMMENT //  << "\nSolve Time: " << setprecision(15) << sStat->time << endl;
 
-        for (int k = 0; k < inst->Ks; k++){
+        for (int k = 0; k < inst->K; k++){
             for (int a = 0; a < sStat->solvec[k].size(); a++){
                 int i = sStat->solvec[k][a].first;
                 int j = sStat->solvec[k][a].second;

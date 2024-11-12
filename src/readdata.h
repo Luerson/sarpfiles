@@ -28,9 +28,9 @@
 using namespace std;
 
 void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector<nodeStat> &nodeVec, double ***Mdist, probStat* problem);
-void calcDistCsarp(double **dist, int full, int V, const vector<double> &vxs, const vector<double> &vys, const vector<double> &vxf, const vector<double> &vyf, string instType);
-void calcDistGhsarp(double **dist, int full, int V, const vector<double> &vxs, const vector<double> &vys, const vector<double> &vxf, const vector<double> &vyf, string instType);
-void calcDistSfsarp(double **dist, int full, int V, const vector<double> &vxs, const vector<double> &vys, const vector<double> &vxf, const vector<double> &vyf, string instType);
+void calcDistCsarp(double **dist, int full, int V, int startRest, const vector<double> &vxs, const vector<double> &vys, const vector<double> &vxf, const vector<double> &vyf, string instType);
+void calcDistGhsarp(double **dist, int full, int V, int startRest, const vector<double> &vxs, const vector<double> &vys, const vector<double> &vxf, const vector<double> &vyf, string instType);
+void calcDistSfsarp(double **dist, int full, int V, int startRest, const vector<double> &vxs, const vector<double> &vys, const vector<double> &vxf, const vector<double> &vyf, string instType);
 void tightWindowDETOUR1(double **dist, int n, int m, vector<double> &ve, vector<double> &vl, double kmPerMin, string instModel);
 
 int readDepotCsarp(instanceStat *inst, ifstream &in, int tempNode, vector<double> &vxs, vector<double> &vys, vector<double> &vloadCustomer, vector<double> &vloadParcel, vector<double> &ve, vector<double> &vl, int startDepot, int startDummy);
@@ -40,5 +40,6 @@ int readNewZTestsCsarp(instanceStat *inst, ifstream &in, int tempNode, vector<do
 
 void resizeStructures(vector<double> &vxs, vector<double> &vys, vector<double> &vloadCustomer, vector<double> &vloadParcel, vector<double> &ve, vector<double> &vl, int _size);
 void fillDummy(vector<double> &vxs, vector<double> &vys, vector<double> &vloadCustomer, vector<double> &vloadParcel, vector<double> &ve, vector<double> &vl, int S, int B, int T);
+void fillRestNodes(instanceStat *inst, vector<double> &vxs, vector<double> &vys, vector<double> &vloadCustomer, vector<double> &vloadParcel, vector<double> &ve, vector<double> &vl, int S, vector<vector<pair<int, int>>> &vehicleShiftTimes);
 
 #endif

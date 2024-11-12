@@ -110,16 +110,16 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
         vloadParcel = vloadCustomer;
     }
 
-    fillDummy(vxs, vys, vloadCustomer, vloadParcel, ve, vl, S, inst->B, inst->dayEnd);
+    fillDummy(vxs, vys, vloadCustomer, vloadParcel, ve, vl, dummy, inst->B, inst->dayEnd);
+
+    fillRestNodes(inst, vxs, vys, vloadCustomer, vloadParcel, ve, vl, inst->S.size() - inst->K, inst->vehicleShiftTimes);
     /*---------------------------------------------------*/
 
     in.close();
 
     int Sdummy = S;
-    inst->dummy = Sdummy;
-
-    int sV = R + Sdummy;
-    full = sV + Sdummy;
+    inst->dummy = dummy;
+    full += inst->S.size() - inst->K;
 
     // Calcula a matriz de distâncias
     /*---------------------------------------------------*/
@@ -128,11 +128,11 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
         dist[i] = new double [full];
     }
 
-    calcDistCsarp(dist, full, V, vxs, vys, vxf, vyf, inst->instType);
-    calcDistGhsarp(dist, full, V, vxs, vys, vxf, vyf, inst->instType);
-    calcDistSfsarp(dist, full, V, vxs, vys, vxf, vyf, inst->instType);
+    calcDistCsarp(dist, full, V, inst->K, vxs, vys, vxf, vyf, inst->instType);
+    calcDistGhsarp(dist, full, V, inst->K, vxs, vys, vxf, vyf, inst->instType);
+    calcDistSfsarp(dist, full, V, inst->K, vxs, vys, vxf, vyf, inst->instType);
     /*---------------------------------------------------*/
-    
+
     // Calculando os profits de cada nó
     /*---------------------------------------------------*/
     double *delta = new double[full]; // tempo de serviço de cada nó
@@ -140,9 +140,6 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
 
     double singleProfit;
     double mandist;
-
-    if (inst->instFolder == "InstancesZTest") {}
-
 
     for (int i = 0; i < full; i++){
         delta[i] = service/double(60);
@@ -182,9 +179,13 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
             }
         }
 
-        if (i >= sV - K){
+        if (i >= V - K){
             delta[i] = 0;
             profit[i] = 0;
+        }
+
+        if (i >= V + K) {
+            delta[i] = vl[i] - ve[i];
         }
     }
     /*---------------------------------------------------*/
@@ -198,14 +199,13 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     /*---------------------------------------------------*/
 
 
-    // Ajsutando janela de tempo dos customers
-    /*---------------------------------------------------*/
-    tightWindowDETOUR1(dist, n, m, ve, vl, kmPerMin, inst->instModel);
-    /*---------------------------------------------------*/
-
+    // // Ajsutando janela de tempo dos customers
+    // /*---------------------------------------------------*/
+    // tightWindowDETOUR1(dist, n, m, ve, vl, kmPerMin, inst->instModel);
+    // /*---------------------------------------------------*/
     // Preenchendo os dados de nodeVec
     /*---------------------------------------------------*/
-     for (int i = 0; i < sV; i++){
+     for (int i = 0; i < V; i++){
         node->xs = vxs[i];
         node->ys = vys[i];
         node->load = vloadCustomer[i];
@@ -235,9 +235,9 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
             node->customerLoad = vloadCustomer[i];
         }
                     
-        node->e = ve[i]/60;
+        node->e = ve[i]/60.0;
 
-        node->l = vl[i]/60;
+        node->l = vl[i]/60.0;
 
         // cout << i << " " << node->e << " " << node->l << endl;
 
@@ -257,13 +257,30 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
         node->load = 0;    
         node->customerLoad = 0;
         node->parcelLoad = 0;    
-        node->e = ve[sV + i];
-        node->l = vl[sV + i];      
+        node->e = ve[V + i]/60.0;
+        node->l = vl[V + i]/60.0;      
         node->xf = 0;
         node->yf = 0;
         node->delta = 0;
         node->profit = 0;
-        node->index = sV + i;
+        node->index = V + i;
+        nodeVec.push_back(*node);
+    }
+
+    // Adding rest nodes
+    for (int i = 0; i < inst->S.size() - inst->K; i++){
+        node->xs = 0;
+        node->ys = 0;
+        node->load = 0;    
+        node->customerLoad = 0;
+        node->parcelLoad = 0;    
+        node->e = ve[V + inst->dummy + i]/60.0;
+        node->l = ve[V + inst->dummy + i]/60.0;      
+        node->xf = 0;
+        node->yf = 0;
+        node->delta = delta[i];
+        node->profit = 0;
+        node->index = V + inst->dummy + i;
         nodeVec.push_back(*node);
     }
     /*---------------------------------------------------*/
@@ -274,8 +291,8 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     inst->K = K;
     inst->n = n;
     inst->m = m;
-    inst->V = sV;
-    inst->Ks = inst->S.size();
+    inst->V = V;
+    inst->Ks = inst->S.size() - inst->K;
     inst->service = service;
     inst->totalCustomProfit = 0;
     for (int i = 0; i < n; i++){
@@ -287,14 +304,39 @@ void readData (int argc, char** argv, nodeStat *node, instanceStat *inst, vector
     delete[] delta;
 }
 
+void fillRestNodes(instanceStat *inst, vector<double> &vxs, vector<double> &vys, vector<double> &vloadCustomer, vector<double> &vloadParcel, vector<double> &ve, vector<double> &vl, int S, vector<vector<pair<int, int>>> &vehicleShiftTimes) {
+
+    int l = 2*inst->n + 2*inst->m + 2*inst->K;
+
+    for (int i = 0; i < vehicleShiftTimes.size(); i++) {
+        inst->vehicleShifts.push_back(vector<int>());
+        for (int j = 1; j < vehicleShiftTimes.size(); j++) {
+            
+            inst->vehicleShifts[i].push_back(l++);
+            int start = vehicleShiftTimes[i][j - 1].second;
+            int end = vehicleShiftTimes[i][j].first;
+
+            double x = inst->vehicleShiftLocal[i][j].first;
+            double y = inst->vehicleShiftLocal[i][j].second;
+
+            vxs.push_back(x);
+            vys.push_back(y);
+            vloadCustomer.push_back(0);
+            vloadParcel.push_back(0);
+            ve.push_back(start);
+            vl.push_back(end);
+        }  
+    }
+}
+
 void fillDummy(vector<double> &vxs, vector<double> &vys, vector<double> &vloadCustomer, vector<double> &vloadParcel, vector<double> &ve, vector<double> &vl, int S, int B, int T) {
     for (int i = 0; i < S; i++){
         vxs.push_back(0);
         vys.push_back(0);
         vloadCustomer.push_back(0);
         vloadParcel.push_back(0);
-        ve.push_back(ve[ve.size() - S]/60.0);
-        vl.push_back(vl[vl.size() - S]/60.0);
+        ve.push_back(ve[ve.size() - S]);
+        vl.push_back(vl[vl.size() - S]);
     }
 }
 
@@ -411,20 +453,47 @@ int readNewZTestsCsarp(instanceStat *inst, ifstream &in, int tempNode, vector<do
     
     // Each vehicle can have multiple shifts
     int shiftIndex = 0;
-    int shiftDepotIndex = 2*inst->n + 2*inst->m;
+    int depotIndex = 2*inst->n + 2*inst->m - 1;
+    int shiftDepotIndex = 2*inst->n + 2*inst->m + 2*inst->K;
  
     while (in >> n) {
         inst->vehicleShifts.push_back(vector<int>());
+        inst->vehicleShiftLocal.push_back(vector<pair<double, double>>());
+        inst->vehicleShiftTimes.push_back(vector<pair<int, int>>());
+
+        int depotCustomerLoad, depotParcelLoad, shiftE, shiftL, depotE, depotL;
+        double depotX, depotY;
 
         for (int i = 0; i < n; i++) {
-            resizeStructures(vxs, vys, vloadCustomer, vloadParcel, ve, vl, 1);
-            vloadParcel.resize(vloadParcel.size() + 1);
+            
+            in >> tempNode >> depotX >> depotY >> depotCustomerLoad >> depotParcelLoad >> shiftE >> shiftL;
 
-            in >> tempNode >> vxs[shiftDepotIndex] >> vys[shiftDepotIndex] >> vloadCustomer[shiftDepotIndex] >> vloadParcel[i] >> ve[shiftDepotIndex] >> vl[shiftDepotIndex];
+            if (i == 0) {
+                depotE = shiftE;
+                depotL = shiftL;
+                depotIndex++;
+            }
 
-            inst->S.push_back(shiftIndex++);
-            inst->vehicleShifts.back().push_back(shiftDepotIndex++);
+            depotE = min(depotE, shiftE);
+            depotL = max(depotL, shiftL);
+
+            inst->S.push_back(depotIndex - 2*inst->n - 2*inst->m);
+
+            inst->STimes.push_back(make_pair(shiftE, shiftL));
+            inst->vehicleShiftTimes.back().push_back(make_pair(shiftE, shiftL));
+            inst->vehicleShiftLocal.back().push_back(make_pair(depotX, depotY));
+
         }
+
+        resizeStructures(vxs, vys, vloadCustomer, vloadParcel, ve, vl, 1);
+        vloadParcel.resize(vloadParcel.size() + 1);
+
+        vxs[depotIndex] = depotX;
+        vys[depotIndex] = depotY;
+        vloadCustomer[depotIndex] = 0;
+        vloadParcel[depotIndex]  = 0;
+        ve[depotIndex] = depotE;
+        vl[depotIndex] = depotL;
     }
 
     return shiftIndex;
@@ -477,7 +546,7 @@ void tightWindowDETOUR1(double **dist, int n, int m, vector<double> &ve, vector<
     }
 }
 
-void calcDistCsarp(double **dist, int full, int V, const vector<double> &vxs, const vector<double> &vys, const vector<double> &vxf, const vector<double> &vyf, string instType) {
+void calcDistCsarp(double **dist, int full, int V, int startRest, const vector<double> &vxs, const vector<double> &vys, const vector<double> &vxf, const vector<double> &vyf, string instType) {
     if (instType != "csarp") {
         return;
     }
@@ -486,7 +555,7 @@ void calcDistCsarp(double **dist, int full, int V, const vector<double> &vxs, co
 
     for (int i = 0; i < full; i++) {
         for (int j = 0; j < full; j++){
-            if (i < V && j < V && i != j) {
+            if (!(i >= V && i < V + startRest) && !(j >= V && j < V + startRest) && i != j) {
                 manDist = calcEucDist2(vxs, vys, vxs, vys, i, j);              
 
                 dist[i][j] = manDist;
@@ -497,7 +566,7 @@ void calcDistCsarp(double **dist, int full, int V, const vector<double> &vxs, co
     }
 }
 
-void calcDistGhsarp(double **dist, int full, int V, const vector<double> &vxs, const vector<double> &vys, const vector<double> &vxf, const vector<double> &vyf, string instType) {
+void calcDistGhsarp(double **dist, int full, int V, int startRest, const vector<double> &vxs, const vector<double> &vys, const vector<double> &vxf, const vector<double> &vyf, string instType) {
     if (instType != "ghsarp") {
         return;
     }
@@ -518,7 +587,7 @@ void calcDistGhsarp(double **dist, int full, int V, const vector<double> &vxs, c
     }
 }
 
-void calcDistSfsarp(double **dist, int full, int V, const vector<double> &vxs, const vector<double> &vys, const vector<double> &vxf, const vector<double> &vyf, string instType) {
+void calcDistSfsarp(double **dist, int full, int V, int startRest, const vector<double> &vxs, const vector<double> &vys, const vector<double> &vxf, const vector<double> &vyf, string instType) {
     if (instType != "sf_data") {
         return;
     }

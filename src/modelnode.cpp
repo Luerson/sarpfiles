@@ -3,6 +3,40 @@
 #include <stdio.h>
 #include <set>
 
+void removeDepotToDelivery (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
+
+    for (int k = 0; k < inst->K; k++){
+        int i = k + 2*inst->n + 2*inst->m;
+
+        for (int j = inst->n; j < 2*inst->n; j++) {
+
+            nas->arcs[i][j] = false;
+        }
+
+        for (int j = 2*inst->n + inst->m; j < 2*inst->n + 2*inst->m; j++) {
+
+            nas->arcs[i][j] = false;
+        }
+    }
+}
+
+void removePickupToDummy (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
+
+    for (int k = 0; k < inst->K; k++){
+        int j = k + 2*inst->n + 2*inst->m + inst->K;
+
+        for (int i = 0; i < inst->n; i++) {
+
+            nas->arcs[i][j] = false;
+        }
+
+        for (int i = 2*inst->n; i < 2*inst->n + inst->m; i++) {
+
+            nas->arcs[i][j] = false;
+        }
+    }
+}
+
 void addArcsToParcelPickup (int i, instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
     int auxK;
 
@@ -107,6 +141,53 @@ void addArcsToDummy (int i, instanceStat *inst, nodeArcsStruct *nas, probStat* p
     }
 }
 
+void restArcs (int k, instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
+
+    // The vehicle can travel from any request to rest node
+    for (int i1 = 0; i1 < inst->vehicleShifts[k].size(); i1++) {
+        for (int j = 0; j < inst->V - inst->K; j++) {
+            int i = inst->vehicleShifts[k][i1];
+
+            nas->arcs[i][j] = true;
+        }
+    }
+
+    // The vehicle can travel from a rest node to any request
+    for (int i = 0; i < inst->V - inst->K; i++) {
+        for (int j1 = 0; j1 < inst->vehicleShifts[k].size(); j1++) {
+        
+            int j = inst->vehicleShifts[k][j1];
+
+            nas->arcs[i][j] = true;
+        }
+    }
+
+    // The vehicle can travel between rest nodes
+    for (int j1 = 0; j1 < inst->vehicleShifts[k].size() - 1; j1++) {
+    
+        int i = inst->vehicleShifts[k][j1];
+        int j = inst->vehicleShifts[k][j1+1];
+
+        nas->arcs[i][j] = true;
+    }
+
+    // The vehicle can travel from the depot to the first rest node
+    {
+        int j = inst->vehicleShifts[k][0];
+        int i = inst->V - inst->K + k;
+
+        nas->arcs[i][j] = true;
+    }
+
+    // The vehicle can travel from the last rest node to the dummy
+    {
+        int i = inst->vehicleShifts[k].back();
+        int j = inst->V + k;
+
+        nas->arcs[i][j] = true;
+    }
+}
+
 void removeArcsToTheSameNode (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
 
     for (int i = 0; i < nodeVec.size(); i++){//j is the dummy node
@@ -132,12 +213,12 @@ void removeDeliveryToItsPickup (instanceStat *inst, nodeArcsStruct *nas, probSta
 
 void fillInfoDepotToDummy (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
 
-    int fDepot = inst->V - inst->Ks;
+    int fDepot = inst->V - inst->K;
     int i, l;
 
-    for (int k = 0; k < inst->Ks; k++) {
+    for (int k = 0; k < inst->K; k++) {
         i = k + fDepot;
-        l = i + inst->Ks;
+        l = i + inst->K;
 
         if (!nas->arcs[i][l]) {
             continue;
@@ -154,10 +235,16 @@ void fillInfoDepotToDummy (instanceStat *inst, nodeArcsStruct *nas, probStat* pr
 
 void fillInfoToDummy (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
 
-    int fDepot = inst->V - inst->Ks;
+    int fDepot = inst->V - inst->K;
+    int fRest = inst->V + inst->K;
 
-    for (int i = 0; i < fDepot; i++) {
-        for (int k = 0; k < inst->Ks; k++) {
+    for (int i = 0; i < nodeVec.size(); i++) {
+
+        if (i >= fDepot && i < fRest) {
+            continue;
+        }
+        
+        for (int k = 0; k < inst->K; k++) {
             int j = k + inst->V;
 
             if (!nas->arcs[i][j]) {
@@ -177,10 +264,16 @@ void fillInfoToDummy (instanceStat *inst, nodeArcsStruct *nas, probStat* problem
 
 void fillInfoFromDepot (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
 
-    int fDepot = inst->V - inst->Ks;
+    int fDepot = inst->V - inst->K;
+    int fRest = inst->V + inst->K;
 
-    for (int k = 0; k < inst->Ks; k++) {
-        for (int j = 0; j < fDepot; j++) {
+    for (int k = 0; k < inst->K; k++) {
+        for (int j = 0; j < nodeVec.size(); j++) {
+
+            if (j >= fDepot && j < fRest) {
+                continue;
+            }
+
             int i = k + fDepot;
 
             if (!nas->arcs[i][j]) {
@@ -200,10 +293,19 @@ void fillInfoFromDepot (instanceStat *inst, nodeArcsStruct *nas, probStat* probl
 
 void fillInfoRequests (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist) {
 
-    int fDepot = inst->V - inst->Ks;
+    int fDepot = inst->V - inst->K;
+    int fRest = inst->V + inst->K;
 
-    for (int i = 0; i < fDepot; i++) {
-        for (int j = 0; j < fDepot; j++) {
+    for (int i = 0; i < nodeVec.size(); i++) {
+        for (int j = 0; j < nodeVec.size(); j++) {
+
+            if (i >= fDepot && i < fRest) {
+                continue;
+            }
+
+            if (j >= fDepot && j < fRest) {
+                continue;
+            }
 
             if (!nas->arcs[i][j]) {
                 continue;
@@ -216,7 +318,7 @@ void fillInfoRequests (instanceStat *inst, nodeArcsStruct *nas, probStat* proble
             nas->allArcs.push_back(nas->fArc);
 
             nas->arcnf.push_back(nas->fArc);
-            for (int k = 0; k < inst->Ks; k++) {
+            for (int k = 0; k < inst->K; k++) {
                 nas->arcV[i][j].push_back(k);
             }
         }
@@ -381,11 +483,11 @@ void initArcs (instanceStat *inst, nodeArcsStruct *nas){
     nas->arcnf.clear();
     nas->discount.clear();
 
-    for (int k = 0; k < inst->Ks; k++){
+    for (int k = 0; k < inst->K; k++){
         nas->arcPlus.push_back(auxPairVec);
     }
 
-    for(int i = 0; i < inst->V + inst->dummy; i++){
+    for(int i = 0; i < inst->V + inst->dummy + inst->Ks; i++){
         aux2d.push_back(aux1d);
 
         nas->vArcPlus.push_back(nas->arcPlus);
@@ -394,8 +496,8 @@ void initArcs (instanceStat *inst, nodeArcsStruct *nas){
 
     nas->arcPlus.clear();
 
-    for(int i = 0; i < inst->V + inst->Ks; i++){
-        for(int j = 0; j < inst->V + inst->dummy; j++){
+    for(int i = 0; i < inst->V + inst->K + inst->Ks; i++){
+        for(int j = 0; j < inst->V + inst->dummy + inst->Ks; j++){
             auxVec.push_back(false);
         }
         nas->arcs.push_back(auxVec);
@@ -443,9 +545,15 @@ void feasibleArcs (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, v
         addArcsToDummy(i, inst, nas, problem, nodeVec, mdist);
     }
 
+    for (int k = 0; k < inst->K; k++) {
+        restArcs(k, inst, nas, problem, nodeVec, mdist);
+    }
+
     // Arcs that are never allowed
     removeArcsToTheSameNode(inst, nas, problem, nodeVec, mdist);
     removeDeliveryToItsPickup(inst, nas, problem, nodeVec, mdist);
+    removeDepotToDelivery(inst, nas, problem, nodeVec, mdist);
+    removePickupToDummy(inst, nas, problem, nodeVec, mdist);
     /*---------------------------------------------------*/
 
     // Each model specifics
@@ -475,7 +583,7 @@ void feasibleArcs (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, v
     fillInfoFromDepot(inst, nas, problem, nodeVec, mdist);
     fillInfoRequests(inst, nas, problem, nodeVec, mdist);
 
-    // If discount vector was not initializes, it means there is no discount
+    // If discount vector was not initialized, it means there is no discount
     if (nas->discount.empty()) {
         int _size = nodeVec.size();
         nas->discount = vector< vector< double > >(_size, vector< double >(_size, 0));
@@ -601,12 +709,12 @@ void viewSol (instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, sol
     int currSP;
     vector<int> orderVec;
 
-    for (int k = 0; k < inst->Ks; k++){
+    for (int k = 0; k < inst->K; k++){
         sStat->solOrder.push_back(auxSolOrder);
     }
 
-    for (int k = 0; k < inst->Ks; k++){
-        currSP = inst->V - inst->Ks + k;
+    for (int k = 0; k < inst->K; k++){
+        currSP = inst->V - inst->K + k;
 
         for (int i = 0; i < sStat->solvec[k].size(); i++){
             auxPair.first = sStat->solvec[k][i].first;
@@ -640,10 +748,10 @@ void viewSol (instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, sol
         }
     }
 
-    cout  << "\nNumber of Vehicles: " << inst->Ks << endl;
+    cout  << "\nNumber of Vehicles: " << inst->K << endl;
 
     cout  << "\nSolution: " << endl;
-    for (int k = 0; k < inst->Ks; k++){
+    for (int k = 0; k < inst->K; k++){
         cout  << "Vehicle " << k << ": ";
         for (int i = 0; i < sStat->solOrder[k].size(); i++){
             if (i < sStat->solOrder[k].size() - 1){
@@ -659,7 +767,7 @@ void viewSol (instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, sol
 
     // disregard if fip
     cout  << "\nSolution structure: " << endl;
-    for (int k = 0; k < inst->Ks; k++){
+    for (int k = 0; k < inst->K; k++){
         cout  << "Vehicle " << k << ": ";
         for (int i = 0; i < sStat->solOrder[k].size(); i++){
             if (i < sStat->solOrder[k].size() - 1){
@@ -679,7 +787,9 @@ void viewSol (instanceStat *inst, double **mdist, vector<nodeStat> &nodeVec, sol
                 }
                 else if (sStat->solOrder[k][i] < 2*inst->n + 2*inst->m + inst->K){
                     cout  << "S" << " - ";
-                }                                      
+                } else {
+                    cout << "Rest" << " - ";
+                }                                 
             }
             else{
 

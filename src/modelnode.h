@@ -55,6 +55,8 @@ void obligueDirectCustomer (const instanceStat *inst, nodeArcsStruct *nas, const
 void limitParcelCapacity (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist);
 void limitCustomerCapacity (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist);
 void removeNonProfitableDetours (const instanceStat *inst, nodeArcsStruct *nas, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist);
+void removeDepotToDelivery (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist);
+void removePickupToDummy (instanceStat *inst, nodeArcsStruct *nas, probStat* problem, vector<nodeStat> &nodeVec, double **mdist);
 
 vector< vector < double > > discountPerMin (const instanceStat *inst, const probStat* problem, const vector<nodeStat> &nodeVec, double **mdist);
 
